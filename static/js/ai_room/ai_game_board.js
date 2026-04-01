@@ -7,8 +7,6 @@ function showPieceActionModal(piece) {
     const modal = document.getElementById('piece-action-modal');
     const title = document.getElementById('piece-action-title');
     const info = document.getElementById('piece-action-info');
-    const moveBtn = document.getElementById('btn-action-move');
-    const attackBtn = document.getElementById('btn-action-attack');
     
     console.log('[DEBUG] modal元素:', modal, 'title:', title, 'info:', info);
     
@@ -30,17 +28,14 @@ function showPieceActionModal(piece) {
     const stepsLeft = (gameState && gameState.steps_left) || 0;
     info.innerHTML = `剩余步数：<strong>${stepsLeft}</strong> 步`;
     
-    moveBtn.style.display = 'inline-block';
-    attackBtn.style.display = 'inline-block';
-    
-    modal.classList.remove('piece-action-modal-hidden');
-    console.log('[DEBUG] 模态框已显示, classList:', modal.className, 'style.display:', modal.style.display);
+    modal.style.display = 'block';
+    console.log('[DEBUG] 模态框已显示, style.display:', modal.style.display);
 }
 
 function hidePieceActionModal() {
     const modal = document.getElementById('piece-action-modal');
     if (modal) {
-        modal.classList.add('piece-action-modal-hidden');
+        modal.style.display = 'none';
     }
 }
 
@@ -66,8 +61,11 @@ function cancelPieceAction() {
 }
 
 document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' && document.getElementById('piece-action-modal').style.display !== 'none') {
-        cancelPieceAction();
+    if (e.key === 'Escape') {
+        const modal = document.getElementById('piece-action-modal');
+        if (modal && modal.style.display === 'block') {
+            cancelPieceAction();
+        }
     }
 });
 
@@ -75,7 +73,7 @@ document.addEventListener('click', function(e) {
     const modal = document.getElementById('piece-action-modal');
     if (!modal) return;
     
-    if (modal.style.display !== 'none') {
+    if (modal.style.display === 'block') {
         const isClickInside = modal.contains(e.target);
         const isModalButton = e.target.closest('#piece-action-modal button');
         
