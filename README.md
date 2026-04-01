@@ -37,7 +37,8 @@ nohup python3 -m gunicorn --worker-class eventlet -w 1 -b 127.0.0.1:5211 app:app
 ### 新增功能
 
 #### 1. AI对战房间
-- 访问 `/ai_game/<map_name>` 即可创建AI对战房间
+- 访问 `/ai-room?map={map_name}` 即可创建AI对战房间
+- 从首页点击「与 AI 对弈」按钮进入
 - AI自动控制黑方（方），玩家控制红方（黑方）
 - AI具有智能决策能力，会主动进攻和防守
 
