@@ -762,55 +762,6 @@ function autoDeployRecruitedPiece(state, side, pieceType, cardName) {
 
 // ========== 回合系统 ==========
 
-function rollForTurn() {
-    if (!gameState) {
-        addLog('⚠️ 游戏未初始化');
-        return;
-    }
-    if (isAIThinking) {
-        addLog('⚠️ AI正在思考中，请等待...');
-        return;
-    }
-
-    if (gameState.has_rolled) {
-        addLog('⚠️ 本回合已经掷过采了');
-        return;
-    }
-
-    soundFX.playDiceRoll();
-    const sticks = Array.from({length: 6}, () => Math.random() < 0.5 ? 1 : 0);
-    const moveSteps = sticks.reduce((a, b) => a + b, 0);
-
-    const rollAnim = document.getElementById('roll-animation');
-    if (rollAnim) {
-        rollAnim.style.display = 'block';
-    }
-
-    animateDiceRoll(sticks, () => {
-        setTimeout(() => {
-            gameState.steps_left = moveSteps;
-            gameState.has_rolled = true;
-
-            if (rollAnim) {
-                rollAnim.style.display = 'none';
-            }
-
-            addLog(`🎲 掷出 ${sticks.join('')}，得 ${moveSteps} 步`);
-            soundFX.playClick();
-            renderBoard(gameState.board);
-            updateInfo();
-            updateButtonState();
-
-            if (moveSteps === 0) {
-                addLog('😢 掷出0步，回合结束');
-                endTurn();
-            } else {
-                saveGameStateToCookie();
-            }
-        }, 500);
-    });
-}
-
 function createDiceElement(index, finalValue) {
     const dice = document.createElement('div');
     dice.className = 'binary-dice';
@@ -841,11 +792,17 @@ function createDiceElement(index, finalValue) {
     return dice;
 }
 
-function animateDiceRoll(finalSticks, onComplete) {
+function animateDiceRoll(finalSticks, onComplete, roller) {
     const diceAnimation = document.getElementById('dice-animation');
+    const rollTitle = document.getElementById('roll-title');
     if (!diceAnimation) {
         if (onComplete) onComplete();
         return;
+    }
+
+    if (rollTitle) {
+        const rollerText = roller === 'AI' ? '🤖 AI' : (roller === 'player' ? '🔴 红方' : '🎲');
+        rollTitle.innerHTML = `${rollerText} 掷采中...`;
     }
 
     diceAnimation.innerHTML = '';
@@ -909,7 +866,7 @@ function autoRollForPlayer() {
                 saveGameStateToCookie();
             }
         }, 500);
-    });
+    }, 'player');
 }
 
 function showZeroRollModal() {
@@ -1121,7 +1078,7 @@ function executeAITurn() {
                 }, 500);
             });
         }, 500);
-    }, 500);
+    }, 'AI');
 }
 
 function executeAIMove() {
@@ -1328,10 +1285,16 @@ function endAITurn() {
     gameState.turn = p1Id;
     gameState.has_rolled = false;
     gameState.steps_left = 0;
+    gameState.rolled_by_player = false;
 
     renderBoard(gameState.board);
     updateInfo();
     updateButtonState();
+
+    showTurnAnnouncement('R', () => {
+        isGameLocked = false;
+        startPlayerTurn();
+    });
 }
 
 // ========== UI更新 ==========
@@ -1393,7 +1356,11 @@ function updateInfo() {
         currentTurnIndicator.innerText = '红方回合';
         currentTurnIndicator.style.background = 'rgba(139, 37, 0, 0.3)';
         currentTurnIndicator.style.color = 'var(--ink-red)';
-        redStepsSpan.innerText = `步数: ${gameState.steps_left}`;
+        if (gameState.has_rolled) {
+            redStepsSpan.innerText = `步数: ${gameState.steps_left}`;
+        } else {
+            redStepsSpan.innerText = '请掷采';
+        }
         redStepsSpan.className = 'side-steps active';
         blackStepsSpan.innerText = '步数: 0';
         blackStepsSpan.className = 'side-steps';
