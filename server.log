@@ -5,7 +5,4 @@
   warnings.warn(
  * Debugger is active!
  * Debugger PIN: 549-823-704
-(3662) wsgi starting up on http://127.0.0.1:5212
-(3662) accepted ('127.0.0.1', 55836)
-Invalid session 3n5oPTkDQhQs8_ycAABG (further occurrences of this error will be logged with level INFO)
-127.0.0.1 - - [01/Apr/2026 10:08:02] "GET /socket.io/?EIO=4&transport=websocket&sid=3n5oPTkDQhQs8_ycAABG HTTP/1.1" 400 241 0.000265
+(5023) wsgi starting up on http://127.0.0.1:5212

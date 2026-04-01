@@ -1002,13 +1002,67 @@ function endTurn() {
     }
 }
 
-function giveUpGame() {
-    if (!confirm('放弃当前进度？刷新后将重新开始。')) {
+function restoreFromSave() {
+    const restoreModal = document.getElementById('restore-modal');
+    if (restoreModal) {
+        restoreModal.style.display = 'none';
+    }
+    
+    const savedState = window._pendingRestoreState;
+    if (!savedState) {
         return;
     }
+    
+    console.log('[DEBUG] 从 localStorage 恢复游戏');
+    console.log('[DEBUG] savedState.turn:', savedState.turn, 'p1Id:', p1Id);
+    console.log('[DEBUG] savedState.has_rolled:', savedState.has_rolled);
+    console.log('[DEBUG] savedState.steps_left:', savedState.steps_left);
+    
+    initializeGameState(savedState);
+    initializeAIStrategyCards();
+
+    if (gameState.cards && typeof strategyCardCounts !== 'undefined') {
+        for (const cardId in gameState.cards) {
+            if (strategyCardCounts[cardId] !== undefined) {
+                strategyCardCounts[cardId] = gameState.cards[cardId] || 0;
+            }
+        }
+    }
+
+    renderBoard(gameState.board);
+    updateInfo();
+    updateButtonState();
+
+    console.log('[DEBUG] 恢复后 gameState.turn:', gameState.turn, 'p1Id:', p1Id);
+    console.log('[DEBUG] 恢复后 gameState.has_rolled:', gameState.has_rolled);
+    console.log('[DEBUG] 恢复后 gameState.steps_left:', gameState.steps_left);
+    
+    addLog('🔄 从存档恢复游戏！');
+
+    const welcomeScreen = document.getElementById('welcome-screen');
+    if (welcomeScreen) {
+        welcomeScreen.classList.remove('show');
+    }
+
+    showTurnAnnouncement('R', () => {
+        isGameLocked = false;
+        if (gameState.turn !== p1Id) {
+            waitForAnnouncement(() => executeAITurn());
+        } else {
+            setTimeout(() => startPlayerTurn(), 500);
+        }
+    });
+}
+
+function giveUpSave() {
+    const restoreModal = document.getElementById('restore-modal');
+    if (restoreModal) {
+        restoreModal.style.display = 'none';
+    }
+    
     clearGameStateCookie();
-    addLog('🗑️ 已放弃当前进度');
-    alert('已放弃。刷新页面后将重新开始。');
+    
+    location.reload();
 }
 
 // ========== AI回合 ==========
@@ -1487,50 +1541,11 @@ function init() {
     console.log('[DEBUG] savedState =', savedState);
 
     if (savedState) {
-        console.log('[DEBUG] 从 localStorage 恢复游戏');
-        console.log('[DEBUG] savedState.turn:', savedState.turn, 'p1Id:', p1Id);
-        console.log('[DEBUG] savedState.has_rolled:', savedState.has_rolled);
-        console.log('[DEBUG] savedState.steps_left:', savedState.steps_left);
-        
-        initializeGameState(savedState);
-        initializeAIStrategyCards();
-
-        if (gameState.cards && typeof strategyCardCounts !== 'undefined') {
-            for (const cardId in gameState.cards) {
-                if (strategyCardCounts[cardId] !== undefined) {
-                    strategyCardCounts[cardId] = gameState.cards[cardId] || 0;
-                }
-            }
+        const restoreModal = document.getElementById('restore-modal');
+        if (restoreModal) {
+            restoreModal.style.display = 'block';
         }
-
-        renderBoard(gameState.board);
-        updateInfo();
-        updateButtonState();
-
-        console.log('[DEBUG] 恢复后 gameState.turn:', gameState.turn, 'p1Id:', p1Id);
-        console.log('[DEBUG] 恢复后 gameState.has_rolled:', gameState.has_rolled);
-        console.log('[DEBUG] 恢复后 gameState.steps_left:', gameState.steps_left);
-        
-        addLog('🔄 从存档恢复游戏！');
-
-        const welcomeScreen = document.getElementById('welcome-screen');
-        if (welcomeScreen) {
-            welcomeScreen.classList.remove('show');
-        }
-
-        setTimeout(() => {
-            adjustSidebarsToBoardBottom();
-            window.addEventListener('resize', adjustSidebarsToBoardBottom);
-        }, 100);
-
-        showTurnAnnouncement('R', () => {
-            isGameLocked = false;
-            if (gameState.turn !== p1Id) {
-                waitForAnnouncement(() => executeAITurn());
-            } else {
-                setTimeout(() => startPlayerTurn(), 500);
-            }
-        });
+        window._pendingRestoreState = savedState;
         return;
     }
 
