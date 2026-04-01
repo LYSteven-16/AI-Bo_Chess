@@ -1001,6 +1001,8 @@ function restoreFromSave() {
         welcomeScreen.classList.remove('show');
     }
 
+    isInitializing = false;
+
     showTurnAnnouncement('R', () => {
         isGameLocked = false;
         if (gameState.turn !== p1Id) {
@@ -1359,7 +1361,7 @@ function updateInfo() {
         if (gameState.has_rolled) {
             redStepsSpan.innerText = `步数: ${gameState.steps_left}`;
         } else {
-            redStepsSpan.innerText = '请掷采';
+            redStepsSpan.innerText = '等待掷采中...';
         }
         redStepsSpan.className = 'side-steps active';
         blackStepsSpan.innerText = '步数: 0';
@@ -1418,46 +1420,30 @@ function showCombatModal(combat, onDismiss) {
     let atkResult = '';
     let defResult = '';
     let motivationalText = '';
+    const playerWon = (combat.winner === 'attacker' && combat.attacker.side === 'R') || 
+                       (combat.winner === 'defender' && combat.defender.side === 'R');
 
-    if (combat.winner === 'attacker') {
-        if (combat.attacker.side === 'R') {
-            atkResult = '<span style="color:#2d5a27;">进攻成功</span>';
-            defResult = '<span style="color:var(--ink-red);">防守失败</span>';
-            resultTitle.innerText = "🎉 进攻成功 🎉";
-            resultTitle.style.color = "#2d5a27";
-            resultTitle.style.textShadow = "0 0 20px rgba(45, 90, 39, 0.5)";
-            motivationalText = "胜而不骄，乘胜追击！";
-        } else {
-            atkResult = '<span style="color:#2d5a27;">进攻成功</span>';
-            defResult = '<span style="color:var(--ink-red);">防守失败</span>';
-            resultTitle.innerText = "💪 防守失败 💪";
-            resultTitle.style.color = "var(--ink-red)";
-            resultTitle.style.textShadow = "0 0 20px rgba(139, 37, 0, 0.5)";
-            motivationalText = "败而不馁，还有机会！血战到底！";
-        }
-    } else if (combat.winner === 'draw') {
+    if (combat.winner === 'draw') {
         atkResult = '<span style="color:var(--ink-brown);">平局</span>';
         defResult = '<span style="color:var(--ink-brown);">平局</span>';
         resultTitle.innerText = "🤝 势均力敌 🤝";
         resultTitle.style.color = "var(--ink-brown)";
         resultTitle.style.textShadow = "0 0 20px rgba(74, 124, 155, 0.4)";
         motivationalText = "不分胜负，保存实力！";
+    } else if (playerWon) {
+        atkResult = combat.attacker.side === 'R' ? '<span style="color:#2d5a27;">进攻成功</span>' : '<span style="color:var(--ink-red);">进攻失败</span>';
+        defResult = combat.defender.side === 'R' ? '<span style="color:#2d5a27;">防守成功</span>' : '<span style="color:var(--ink-red);">防守失败</span>';
+        resultTitle.innerText = "🎉 战斗胜利 🎉";
+        resultTitle.style.color = "#2d5a27";
+        resultTitle.style.textShadow = "0 0 20px rgba(45, 90, 39, 0.5)";
+        motivationalText = "胜而不骄，乘胜追击！";
     } else {
-        if (combat.defender.side === 'R') {
-            atkResult = '<span style="color:var(--ink-red);">进攻失败</span>';
-            defResult = '<span style="color:#2d5a27;">防守胜利</span>';
-            resultTitle.innerText = "🎉 防守胜利 🎉";
-            resultTitle.style.color = "#2d5a27";
-            resultTitle.style.textShadow = "0 0 20px rgba(45, 90, 39, 0.5)";
-            motivationalText = "固若金汤，再接再厉！";
-        } else {
-            atkResult = '<span style="color:var(--ink-red);">进攻失败</span>';
-            defResult = '<span style="color:#2d5a27;">防守胜利</span>';
-            resultTitle.innerText = "💪 防守胜利 💪";
-            resultTitle.style.color = "var(--ink-red)";
-            resultTitle.style.textShadow = "0 0 20px rgba(139, 37, 0, 0.5)";
-            motivationalText = "失利不气馁，卷土重来！";
-        }
+        atkResult = combat.attacker.side === 'R' ? '<span style="color:var(--ink-red);">进攻失败</span>' : '<span style="color:#2d5a27;">进攻成功</span>';
+        defResult = combat.defender.side === 'R' ? '<span style="color:var(--ink-red);">防守失败</span>' : '<span style="color:#2d5a27;">防守成功</span>';
+        resultTitle.innerText = "💔 战斗失利 💔";
+        resultTitle.style.color = "var(--ink-red)";
+        resultTitle.style.textShadow = "0 0 20px rgba(139, 37, 0, 0.5)";
+        motivationalText = "败而不馁，还有机会！";
     }
 
     details.innerHTML = `

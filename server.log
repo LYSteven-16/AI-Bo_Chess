@@ -5,4 +5,6 @@
   warnings.warn(
  * Debugger is active!
  * Debugger PIN: 549-823-704
-(5023) wsgi starting up on http://127.0.0.1:5212
+(11808) wsgi starting up on http://127.0.0.1:5212
+(11808) accepted ('127.0.0.1', 56331)
+127.0.0.1 - - [01/Apr/2026 10:36:47] "GET /game/bo HTTP/1.1" 308 436 0.002259
