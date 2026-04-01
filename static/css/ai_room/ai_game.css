@@ -1632,7 +1632,6 @@
         .mobile-game-controls {
             display: flex;
             justify-content: center;
-            gap: 12px;
             padding: 10px 15px;
             background: rgba(250, 246, 239, 0.95);
             border-top: 2px solid var(--ink-brown);
@@ -1645,9 +1644,7 @@
         }
 
         .mobile-action-btn {
-            flex: 1;
-            max-width: 160px;
-            padding: 14px 20px;
+            padding: 14px 40px;
             font-size: 16px;
             font-family: 'KaiTi', 'STKaiti', 'FangSong', serif;
             letter-spacing: 3px;
@@ -1657,29 +1654,19 @@
             transition: all 0.2s ease;
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
+            background: linear-gradient(135deg, var(--ink-brown) 0%, #5d4037 100%);
+            color: white;
             box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
         }
 
-        .mobile-action-btn:active {
+        .mobile-action-btn:active:not(:disabled) {
             transform: scale(0.95);
-        }
-
-        #mobile-btn-roll {
-            background: linear-gradient(135deg, var(--ink-red) 0%, #6b1d00 100%);
-            color: white;
-        }
-
-        #mobile-btn-roll:hover {
-            background: linear-gradient(135deg, #a32e00 0%, var(--ink-red) 100%);
-        }
-
-        #mobile-btn-skip {
-            background: linear-gradient(135deg, var(--ink-brown) 0%, #5d4037 100%);
-            color: white;
-        }
-
-        #mobile-btn-skip:hover {
             background: linear-gradient(135deg, #5d4037 0%, var(--ink-brown) 100%);
+        }
+
+        .mobile-action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         #mobile-btn-roll:disabled,

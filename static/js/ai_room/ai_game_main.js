@@ -1665,17 +1665,7 @@ function startPlayerTurn() {
 }
 
 function initMobileGameControls() {
-    const mobileRollBtn = document.getElementById('mobile-btn-roll');
     const mobileSkipBtn = document.getElementById('mobile-btn-skip');
-
-    if (mobileRollBtn) {
-        mobileRollBtn.addEventListener('click', () => {
-            console.log('[Mobile] 点击移动端掷采按钮');
-            if (!isGameLocked && gameState.turn === p1Id && !gameState.has_rolled) {
-                rollDice();
-            }
-        }, { passive: true });
-    }
 
     if (mobileSkipBtn) {
         mobileSkipBtn.addEventListener('click', () => {
@@ -1688,14 +1678,7 @@ function initMobileGameControls() {
 }
 
 function updateMobileControlsState() {
-    const mobileRollBtn = document.getElementById('mobile-btn-roll');
     const mobileSkipBtn = document.getElementById('mobile-btn-skip');
-
-    if (mobileRollBtn) {
-        const isPlayerTurn = gameState.turn === p1Id;
-        const canRoll = isPlayerTurn && !gameState.has_rolled && !isGameLocked;
-        mobileRollBtn.disabled = !canRoll;
-    }
 
     if (mobileSkipBtn) {
         const isPlayerTurn = gameState.turn === p1Id;
