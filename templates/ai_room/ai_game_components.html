@@ -50,8 +50,14 @@
     游戏开始
 </div>
 
+<div class="mobile-overlay" id="mobile-overlay"></div>
+
+<button class="mobile-nav-toggle rules-toggle" id="mobile-rules-toggle" aria-label="打开规则面板">📖</button>
+<button class="mobile-nav-toggle info-toggle" id="mobile-info-toggle" aria-label="打开信息面板">📜</button>
+
 <div class="game-layout">
     <div class="game-sidebar rules-sidebar">
+        <button class="mobile-close-btn" id="close-rules-sidebar">×</button>
         <h3>📖 游戏规则</h3>
         <div class="rules-content">
             <details>
@@ -143,7 +149,13 @@
         <div id="game-board"></div>
     </div>
     
+    <div class="mobile-game-controls" id="mobile-game-controls">
+        <button class="mobile-action-btn" id="mobile-btn-roll">🎲 掷采</button>
+        <button class="mobile-action-btn" id="mobile-btn-skip">跳过回合</button>
+    </div>
+    
     <div class="game-sidebar info-sidebar">
+        <button class="mobile-close-btn" id="close-info-sidebar">×</button>
         <h3>📜 对战信息 <span id="current-turn-indicator"></span></h3>
         <div class="players-display">
             <div class="player-row red-side">

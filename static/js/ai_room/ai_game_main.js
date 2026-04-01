@@ -1269,10 +1269,10 @@ function initiateAICombat(fromPos, toPos) {
 function updateButtonState() {
     const rollBtn = document.getElementById('btn-roll');
     if (!rollBtn) return;
-    
+
     const isPlayerTurn = gameState.turn === p1Id;
     const hasRolled = gameState.has_rolled;
-    
+
     if (isPlayerTurn && !hasRolled) {
         rollBtn.disabled = false;
         rollBtn.innerText = "🎲 掷采";
@@ -1283,6 +1283,8 @@ function updateButtonState() {
         rollBtn.disabled = true;
         rollBtn.innerText = "AI回合中";
     }
+
+    updateMobileControlsState();
 }
 
 function endAITurn() {
@@ -1535,6 +1537,8 @@ function init() {
                 setTimeout(() => {
                     adjustSidebarsToBoardBottom();
                     window.addEventListener('resize', adjustSidebarsToBoardBottom);
+                    initMobileNavigation();
+                    initMobileGameControls();
                 }, 100);
 
                 const welcomeScreen = document.getElementById('welcome-screen');
@@ -1598,12 +1602,106 @@ function adjustSidebarsToBoardBottom() {
     // 侧栏高度已在 CSS 中固定，不需要 JS 调整
 }
 
+function initMobileNavigation() {
+    const rulesSidebar = document.querySelector('.rules-sidebar');
+    const infoSidebar = document.querySelector('.info-sidebar');
+    const rulesToggle = document.getElementById('mobile-rules-toggle');
+    const infoToggle = document.getElementById('mobile-info-toggle');
+    const closeRulesBtn = document.getElementById('close-rules-sidebar');
+    const closeInfoBtn = document.getElementById('close-info-sidebar');
+    const overlay = document.getElementById('mobile-overlay');
+
+    function closeAllSidebars() {
+        if (rulesSidebar) rulesSidebar.classList.remove('open');
+        if (infoSidebar) infoSidebar.classList.remove('open');
+        if (overlay) overlay.classList.remove('show');
+    }
+
+    function openRulesSidebar() {
+        closeAllSidebars();
+        if (rulesSidebar) rulesSidebar.classList.add('open');
+        if (overlay) overlay.classList.add('show');
+    }
+
+    function openInfoSidebar() {
+        closeAllSidebars();
+        if (infoSidebar) infoSidebar.classList.add('open');
+        if (overlay) overlay.classList.add('show');
+    }
+
+    if (rulesToggle) {
+        rulesToggle.addEventListener('click', openRulesSidebar, { passive: true });
+    }
+
+    if (infoToggle) {
+        infoToggle.addEventListener('click', openInfoSidebar, { passive: true });
+    }
+
+    if (closeRulesBtn) {
+        closeRulesBtn.addEventListener('click', closeAllSidebars, { passive: true });
+    }
+
+    if (closeInfoBtn) {
+        closeInfoBtn.addEventListener('click', closeAllSidebars, { passive: true });
+    }
+
+    if (overlay) {
+        overlay.addEventListener('click', closeAllSidebars, { passive: true });
+    }
+
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 768) {
+            closeAllSidebars();
+        }
+    }, { passive: true });
+}
+
 function startPlayerTurn() {
     console.log('[DEBUG] startPlayerTurn 被调用');
     console.log('[DEBUG] 当前状态 - has_rolled:', gameState.has_rolled, 'steps_left:', gameState.steps_left);
     isGameLocked = true;
     isGameLocked = false;
     autoRollForPlayer();
+}
+
+function initMobileGameControls() {
+    const mobileRollBtn = document.getElementById('mobile-btn-roll');
+    const mobileSkipBtn = document.getElementById('mobile-btn-skip');
+
+    if (mobileRollBtn) {
+        mobileRollBtn.addEventListener('click', () => {
+            console.log('[Mobile] 点击移动端掷采按钮');
+            if (!isGameLocked && gameState.turn === p1Id && !gameState.has_rolled) {
+                rollDice();
+            }
+        }, { passive: true });
+    }
+
+    if (mobileSkipBtn) {
+        mobileSkipBtn.addEventListener('click', () => {
+            console.log('[Mobile] 点击移动端跳过回合按钮');
+            if (!isGameLocked && gameState.turn === p1Id) {
+                skipTurn();
+            }
+        }, { passive: true });
+    }
+}
+
+function updateMobileControlsState() {
+    const mobileRollBtn = document.getElementById('mobile-btn-roll');
+    const mobileSkipBtn = document.getElementById('mobile-btn-skip');
+
+    if (mobileRollBtn) {
+        const isPlayerTurn = gameState.turn === p1Id;
+        const canRoll = isPlayerTurn && !gameState.has_rolled && !isGameLocked;
+        mobileRollBtn.disabled = !canRoll;
+    }
+
+    if (mobileSkipBtn) {
+        const isPlayerTurn = gameState.turn === p1Id;
+        const hasRolled = gameState.has_rolled;
+        mobileSkipBtn.disabled = !isPlayerTurn || !hasRolled || isGameLocked;
+    }
 }
 
 document.addEventListener('DOMContentLoaded', init);

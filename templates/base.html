@@ -2,7 +2,11 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>{% block title %}六博棋{% endblock %}</title>
     <style>
         :root {
@@ -104,6 +108,9 @@
             background: var(--cream); 
             text-align: center; 
             color: var(--ink-dark); 
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overscroll-behavior-y: contain;
         }
         button { 
             padding: 10px 20px; 
@@ -115,10 +122,15 @@
             color: var(--ink-dark);
             font-family: inherit;
             transition: all 0.3s;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
         button:hover { 
             background: var(--ink-brown);
             color: white;
+        }
+        button:active {
+            transform: scale(0.98);
         }
         input { 
             padding: 10px; 

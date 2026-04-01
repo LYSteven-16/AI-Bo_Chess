@@ -3,6 +3,10 @@
     height: 100%;
 }
 
+    .mobile-game-controls {
+        display: none;
+    }
+
     :root {
         --cell-size: 75px;
         --piece-size: 63px;
@@ -1479,5 +1483,650 @@
 
         .rules-content {
             font-size: 11px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        :root {
+            --cell-size: 45px;
+            --piece-size: 38px;
+            --font-size: 16px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        :root {
+            --cell-size: 38px;
+            --piece-size: 32px;
+            --font-size: 14px;
+        }
+    }
+
+    @media (max-width: 380px) {
+        :root {
+            --cell-size: 32px;
+            --piece-size: 27px;
+            --font-size: 12px;
+        }
+    }
+
+    .mobile-nav-toggle {
+        display: none;
+    }
+
+    @media (max-width: 768px) {
+        .mobile-nav-toggle {
+            display: flex;
+            position: fixed;
+            bottom: 20px;
+            z-index: 1000;
+            background: var(--ink-brown);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 56px;
+            height: 56px;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .mobile-nav-toggle:active {
+            transform: scale(0.95);
+            background: var(--ink-red);
+        }
+
+        .mobile-nav-toggle.rules-toggle {
+            left: 20px;
+        }
+
+        .mobile-nav-toggle.info-toggle {
+            right: 20px;
+        }
+
+        .mobile-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 998;
+        }
+
+        .mobile-overlay.show {
+            display: block;
+        }
+
+        .rules-sidebar,
+        .info-sidebar {
+            position: fixed !important;
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            height: 75vh;
+            bottom: 0 !important;
+            top: auto !important;
+            z-index: 999;
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-y: auto;
+            border-radius: 20px 20px 0 0;
+            margin: 0;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.25);
+        }
+
+        .rules-sidebar.open,
+        .info-sidebar.open {
+            transform: translateY(0);
+        }
+
+        .mobile-close-btn {
+            display: flex;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 36px;
+            height: 36px;
+            background: var(--ink-red);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .rules-sidebar::before,
+        .info-sidebar::before {
+            content: '';
+            display: block;
+            width: 40px;
+            height: 4px;
+            background: var(--ink-light);
+            border-radius: 2px;
+            margin: 10px auto;
+        }
+
+        .game-layout {
+            padding-top: 70px;
+            padding-bottom: 80px;
+        }
+
+        .game-board-container {
+            position: relative !important;
+            left: auto !important;
+            top: auto !important;
+            transform: none !important;
+        }
+
+        .mobile-game-controls {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            padding: 10px 15px;
+            background: rgba(250, 246, 239, 0.95);
+            border-top: 2px solid var(--ink-brown);
+            position: fixed;
+            bottom: 70px;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .mobile-action-btn {
+            flex: 1;
+            max-width: 160px;
+            padding: 14px 20px;
+            font-size: 16px;
+            font-family: 'KaiTi', 'STKaiti', 'FangSong', serif;
+            letter-spacing: 3px;
+            border: 2px solid var(--ink-brown);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .mobile-action-btn:active {
+            transform: scale(0.95);
+        }
+
+        #mobile-btn-roll {
+            background: linear-gradient(135deg, var(--ink-red) 0%, #6b1d00 100%);
+            color: white;
+        }
+
+        #mobile-btn-roll:hover {
+            background: linear-gradient(135deg, #a32e00 0%, var(--ink-red) 100%);
+        }
+
+        #mobile-btn-skip {
+            background: linear-gradient(135deg, var(--ink-brown) 0%, #5d4037 100%);
+            color: white;
+        }
+
+        #mobile-btn-skip:hover {
+            background: linear-gradient(135deg, #5d4037 0%, var(--ink-brown) 100%);
+        }
+
+        #mobile-btn-roll:disabled,
+        #mobile-btn-skip:disabled {
+            background: #ccc;
+            border-color: #aaa;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        #game-board {
+            border-width: 4px;
+        }
+
+        .cell {
+            cursor: pointer;
+        }
+
+        .piece {
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .piece:active:not(.selected) {
+            transform: scale(1.15);
+            z-index: 20;
+        }
+
+        .cell:active {
+            filter: brightness(1.1);
+        }
+
+        #btn-roll {
+            min-height: 48px;
+            font-size: 16px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #btn-skip-turn,
+        #btn-toggle-sound,
+        #btn-bgm {
+            min-height: 44px;
+            font-size: 14px;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .strategy-card {
+            padding: 8px 4px;
+            min-height: 60px;
+        }
+
+        .strategy-card:active:not(.disabled):not(.used) {
+            transform: scale(0.95);
+        }
+
+        #combat-modal {
+            width: 90%;
+            max-width: 400px;
+            padding: 30px 20px;
+        }
+
+        #combat-result {
+            font-size: 36px;
+            letter-spacing: 5px;
+        }
+
+        #combat-details {
+            font-size: 16px;
+        }
+
+        #combat-confirm-btn {
+            padding: 14px 40px;
+            font-size: 18px;
+            min-height: 48px;
+        }
+
+        .welcome-title {
+            font-size: 56px;
+            letter-spacing: 15px;
+        }
+
+        .welcome-subtitle {
+            font-size: 18px;
+            letter-spacing: 5px;
+        }
+
+        .btn-start-game {
+            padding: 16px 40px;
+            font-size: 20px;
+            letter-spacing: 5px;
+        }
+
+        #restore-modal,
+        #zero-roll-modal,
+        #strategy-card-modal {
+            width: 90%;
+            max-width: 400px;
+            padding: 30px 20px;
+        }
+
+        .players-display {
+            padding: 8px;
+        }
+
+        .player-row {
+            padding: 8px;
+        }
+
+        .side-indicator {
+            width: 24px;
+            height: 24px;
+            font-size: 12px;
+        }
+
+        .side-name {
+            font-size: 12px;
+        }
+
+        #current-turn-indicator {
+            font-size: 12px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        :root {
+            --cell-size: 36px;
+            --piece-size: 30px;
+        }
+
+        .mobile-nav-toggle {
+            width: 50px;
+            height: 50px;
+            font-size: 20px;
+            bottom: 15px;
+        }
+
+        .mobile-nav-toggle.rules-toggle {
+            left: 15px;
+        }
+
+        .mobile-nav-toggle.info-toggle {
+            right: 15px;
+        }
+
+        .game-layout {
+            padding-top: 60px;
+            padding-bottom: 75px;
+        }
+
+        #game-board {
+            border-width: 3px;
+        }
+
+        .cell.corner-tl,
+        .cell.corner-tr,
+        .cell.corner-bl,
+        .cell.corner-br {
+            border-radius: 4px;
+        }
+
+        .move-indicator {
+            width: 20px;
+            height: 20px;
+            font-size: 10px;
+        }
+
+        .strategy-cards-grid {
+            grid-template-columns: 1fr 1fr;
+            gap: 4px;
+        }
+
+        .strategy-card-name {
+            font-size: 11px;
+        }
+
+        .strategy-card-count {
+            font-size: 16px;
+        }
+
+        .strategy-card-effect {
+            font-size: 10px;
+        }
+
+        #combat-result {
+            font-size: 28px;
+            letter-spacing: 3px;
+        }
+
+        .welcome-title {
+            font-size: 42px;
+            letter-spacing: 10px;
+        }
+
+        .welcome-subtitle {
+            font-size: 16px;
+        }
+
+        .btn-start-game {
+            padding: 14px 30px;
+            font-size: 18px;
+        }
+
+        #roll-animation {
+            width: 90%;
+            max-width: 350px;
+            padding: 25px 15px;
+        }
+
+        #roll-animation h2 {
+            font-size: 20px;
+        }
+
+        .dice {
+            width: 60px;
+            height: 60px;
+            font-size: 28px;
+        }
+
+        .turn-announcement {
+            font-size: 48px;
+            letter-spacing: 10px;
+        }
+
+        .game-start-announcement {
+            font-size: 64px;
+            letter-spacing: 15px;
+        }
+
+        .rules-sidebar h3,
+        .info-sidebar h3 {
+            font-size: 16px;
+        }
+
+        .rules-content details {
+            margin: 4px 0;
+            padding-bottom: 4px;
+        }
+
+        .rules-content summary {
+            font-size: 13px;
+        }
+
+        .rules-content p {
+            font-size: 11px;
+            line-height: 1.4;
+        }
+
+        .battle-info {
+            padding: 8px;
+        }
+
+        .battle-info p {
+            font-size: 11px;
+        }
+
+        .btn-secondary {
+            padding: 10px;
+            font-size: 13px;
+        }
+
+        .mobile-game-controls {
+            bottom: 60px;
+            padding: 8px 10px;
+            gap: 10px;
+        }
+
+        .mobile-action-btn {
+            padding: 12px 15px;
+            font-size: 14px;
+            letter-spacing: 2px;
+        }
+    }
+
+    @media (max-width: 380px) {
+        :root {
+            --cell-size: 30px;
+            --piece-size: 25px;
+            --font-size: 11px;
+        }
+
+        .mobile-nav-toggle {
+            width: 44px;
+            height: 44px;
+            font-size: 18px;
+            bottom: 10px;
+        }
+
+        .mobile-nav-toggle.rules-toggle {
+            left: 10px;
+        }
+
+        .mobile-nav-toggle.info-toggle {
+            right: 10px;
+        }
+
+        .game-layout {
+            padding-top: 55px;
+            padding-bottom: 65px;
+        }
+
+        .mobile-game-controls {
+            bottom: 55px;
+            padding: 6px 8px;
+            gap: 8px;
+        }
+
+        .mobile-action-btn {
+            padding: 10px 12px;
+            font-size: 13px;
+        }
+
+        .strategy-card {
+            min-height: 50px;
+            padding: 6px 3px;
+        }
+
+        .strategy-card-name {
+            font-size: 10px;
+        }
+
+        .strategy-card-count {
+            font-size: 14px;
+        }
+
+        .strategy-card-effect {
+            font-size: 9px;
+        }
+
+        #combat-modal {
+            padding: 20px 15px;
+        }
+
+        #combat-result {
+            font-size: 24px;
+        }
+
+        #combat-details {
+            font-size: 14px;
+        }
+
+        #combat-confirm-btn {
+            padding: 12px 30px;
+            font-size: 16px;
+        }
+
+        .welcome-title {
+            font-size: 36px;
+            letter-spacing: 8px;
+        }
+
+        .welcome-subtitle {
+            font-size: 14px;
+        }
+
+        .welcome-info {
+            font-size: 14px;
+        }
+
+        .btn-start-game {
+            padding: 12px 24px;
+            font-size: 16px;
+        }
+    }
+
+    @media (min-width: 769px) {
+        .mobile-nav-toggle,
+        .mobile-overlay,
+        .mobile-close-btn,
+        .mobile-game-controls {
+            display: none !important;
+        }
+
+        .rules-sidebar,
+        .info-sidebar {
+            transform: none !important;
+        }
+    }
+
+    @supports (-webkit-touch-callout: none) or (hover: none) {
+        .cell:hover,
+        .piece:hover {
+            background: inherit;
+            box-shadow: inherit;
+            transform: inherit;
+        }
+
+        .cell:active:not(.selected),
+        .piece:active:not(.selected) {
+            filter: brightness(1.15);
+        }
+
+        .piece.selected:active {
+            transform: scale(1.1);
+            box-shadow:
+                0 0 15px 8px rgba(180, 60, 30, 0.8),
+                0 0 30px 15px rgba(180, 60, 30, 0.4);
+        }
+
+        .piece.selected.side-B:active {
+            box-shadow:
+                0 0 15px 8px rgba(80, 70, 60, 0.8),
+                0 0 30px 15px rgba(80, 70, 60, 0.4);
+        }
+    }
+
+    @media (hover: none) and (pointer: coarse) {
+        .cell:hover,
+        .piece:hover {
+            background: inherit;
+            box-shadow: inherit;
+            transform: inherit;
+        }
+
+        .piece.selected:active {
+            transform: scale(1.1);
+            box-shadow:
+                0 0 15px 8px rgba(180, 60, 30, 0.8),
+                0 0 30px 15px rgba(180, 60, 30, 0.4);
+        }
+
+        .piece.selected.side-B:active {
+            box-shadow:
+                0 0 15px 8px rgba(80, 70, 60, 0.8),
+                0 0 30px 15px rgba(80, 70, 60, 0.4);
+        }
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+        .cell:hover {
+            background: rgba(74, 124, 155, 0.15) !important;
+        }
+    }
+
+    .game-board-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    @media (max-width: 768px) {
+        .game-board-wrapper {
+            justify-content: flex-start;
+            padding: 0 10px;
         }
     }
