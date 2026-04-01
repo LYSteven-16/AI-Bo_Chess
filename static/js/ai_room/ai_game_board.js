@@ -427,11 +427,22 @@ function executeMove(fromPos, toPos, moveCost) {
         return;
     }
 
+    const pieceTypes = gameState.piece_types;
+    const pieceMoveRange = pieceTypes?.[attacker.type]?.move_range || Infinity;
+    const currentTurnMove = gameState.turn_move_used || 0;
+    const dist = Math.abs(toR - fromR) + Math.abs(toC - fromC);
+    
+    if (currentTurnMove + dist > pieceMoveRange) {
+        addLog(`❌ 本回合移动距离已达上限（${pieceMoveRange}格）`);
+        return;
+    }
+
     gameState.board[toR][toC] = attacker;
     gameState.board[fromR][fromC] = null;
     gameState.steps_left -= moveCost;
+    gameState.turn_move_used = currentTurnMove + dist;
 
-    addLog(`✅ 棋子移动到 (${toC}, ${toR})，消耗 ${moveCost} 步`);
+    addLog(`✅ 棋子移动到 (${toC}, ${toR})，消耗 ${moveCost} 步（本回合已移动 ${gameState.turn_move_used}/${pieceMoveRange} 格）`);
     soundFX.playPieceMove();
 
     renderBoard(gameState.board);

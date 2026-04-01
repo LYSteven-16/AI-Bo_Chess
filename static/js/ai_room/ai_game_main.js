@@ -20,6 +20,7 @@ function saveGameStateToCookie() {
         piece_types: gameState.piece_types,
         cards: gameState.cards,
         winner: gameState.winner,
+        turn_move_used: gameState.turn_move_used || 0,
         timestamp: Date.now()
     };
 
@@ -73,6 +74,37 @@ function clearGameStateCookie() {
 
 let strategyCardModalCallback = null;
 let aiStrategyCards = null;
+let currentCombatUsedCard = null;
+let turnMoveUsed = 0;
+
+function generateSticksWithFixedBit(cardId) {
+    const sticks = [0, 0, 0, 0, 0, 0];
+    switch(cardId) {
+        case 'erwei':
+            sticks[1] = 1;
+            break;
+        case 'shouwei':
+            sticks[0] = 1;
+            break;
+        case 'shuangxing':
+            sticks[0] = 1;
+            sticks[1] = 1;
+            break;
+        case 'sanyang':
+            sticks[0] = 1;
+            sticks[1] = 1;
+            sticks[2] = 1;
+            break;
+        default:
+            return null;
+    }
+    for (let i = 0; i < 6; i++) {
+        if (sticks[i] === 0) {
+            sticks[i] = Math.random() < 0.5 ? 1 : 0;
+        }
+    }
+    return sticks;
+}
 
 function initializeAIStrategyCards() {
     if (typeof STRATEGY_CARDS !== 'undefined' && typeof strategyCardCounts !== 'undefined') {
@@ -127,15 +159,46 @@ function shouldAIUseStrategyCard(attacker, defender, distance, combatImportance)
     const availableCards = getAvailableAIStrategyCards();
     if (availableCards.length === 0) return null;
 
-    const sortedCards = availableCards.sort((a, b) => b.minValue - a.minValue);
-
-    const threshold = 40;
-    if (combatImportance < threshold) return null;
-
-    for (const card of sortedCards) {
-        if (combatImportance >= card.minValue) {
-            return card;
+    const lowQualityCards = availableCards.filter(c => c.minValue <= 16);
+    const mediumQualityCards = availableCards.filter(c => c.minValue > 16 && c.minValue <= 48);
+    const highQualityCards = availableCards.filter(c => c.minValue > 48);
+    
+    const totalLowQuality = aiStrategyCards['erwei'] || 0;
+    const totalMediumQuality = (aiStrategyCards['shouwei'] || 0);
+    const totalHighQuality = (aiStrategyCards['shuangxing'] || 0) + (aiStrategyCards['sanyang'] || 0);
+    
+    if (totalLowQuality > 2) {
+        if (lowQualityCards.length > 0 && combatImportance >= 16) {
+            return lowQualityCards[0];
         }
+    }
+    
+    if (totalMediumQuality > 2) {
+        for (const card of mediumQualityCards) {
+            if (combatImportance >= card.minValue) {
+                return card;
+            }
+        }
+    }
+    
+    const highQualityThreshold = 50;
+    if (combatImportance >= highQualityThreshold) {
+        const sortedHighQuality = highQualityCards.sort((a, b) => b.minValue - a.minValue);
+        for (const card of sortedHighQuality) {
+            if (combatImportance >= card.minValue) {
+                return card;
+            }
+        }
+    }
+    
+    const mediumThreshold = 35;
+    if (combatImportance >= mediumThreshold && mediumQualityCards.length > 0) {
+        const sortedMedium = mediumQualityCards.sort((a, b) => a.minValue - b.minValue);
+        return sortedMedium[0];
+    }
+    
+    if (lowQualityCards.length > 0 && combatImportance >= 16) {
+        return lowQualityCards[0];
     }
 
     return null;
@@ -201,7 +264,8 @@ function useStrategyCardFromModal(cardId, cardName, minValue) {
             setTimeout(() => cardEl.classList.remove('used'), 500);
         }
 
-        addLog(`🎴 使用锦囊: ${cardName}`);
+        currentCombatUsedCard = { cardId: cardId, name: cardName, side: 'R', bonus: minValue };
+        addLog(`🎴 玩家使用了「${cardName}」，战力+${minValue}`);
     }
 
     if (strategyCardModalCallback) {
@@ -287,7 +351,13 @@ function playerCombatRoll() {
         rollAnim.style.display = 'block';
     }
 
-    const sticks = Array.from({length: 6}, () => Math.random() < 0.5 ? 1 : 0);
+    let sticks;
+    if (currentCombatUsedCard && currentCombatUsedCard.side === 'R') {
+        sticks = generateSticksWithFixedBit(currentCombatUsedCard.cardId);
+        addLog(`🎴 使用「${currentCombatUsedCard.name}」，固定对应位数`);
+    } else {
+        sticks = Array.from({length: 6}, () => Math.random() < 0.5 ? 1 : 0);
+    }
 
     animateDiceRoll(sticks, () => {
         setTimeout(() => {
@@ -360,7 +430,13 @@ function aiAttackerCombatRoll() {
         rollAnim.style.display = 'block';
     }
 
-    const sticks = Array.from({length: 6}, () => Math.random() < 0.5 ? 1 : 0);
+    let sticks;
+    if (currentCombatUsedCard && currentCombatUsedCard.side === 'B') {
+        sticks = generateSticksWithFixedBit(currentCombatUsedCard.cardId);
+        addLog(`🤖 AI使用「${currentCombatUsedCard.name}」，固定对应位数`);
+    } else {
+        sticks = Array.from({length: 6}, () => Math.random() < 0.5 ? 1 : 0);
+    }
 
     animateDiceRoll(sticks, () => {
         setTimeout(() => {
@@ -448,8 +524,6 @@ function resolveCombat() {
     const dist = combat.distance;
     const k = 0.1 + Math.floor(((gameState.turn_number || 1) - 1) / 10) * 0.1;
 
-    const combatBonus = combat.attacker.cardBonus || 0;
-
     let atkPower = CombatCalculator.calculatePower(
         attacker, 
         combat.attacker.val, 
@@ -466,11 +540,6 @@ function resolveCombat() {
         k
     );
     
-    if (combatBonus > 0) {
-        atkPower = Math.max(atkPower, combatBonus);
-        addLog(`⚔️ 锦囊加成: 战力提升至 ${atkPower.toFixed(1)}`);
-    }
-
     let isRangedAttack = false;
     if (gameState.piece_types?.[attacker.type]) {
         isRangedAttack = gameState.piece_types[attacker.type].attack_type === 'ranged';
@@ -524,8 +593,11 @@ function resolveCombat() {
         },
         distance: dist,
         winner: null,
-        msg: ''
+        msg: '',
+        usedCard: currentCombatUsedCard
     };
+    
+    currentCombatUsedCard = null;
 
     let remoteAttackHandled = false;
 
@@ -636,15 +708,12 @@ function resolveCombat() {
         combatCallbackExecuted = true;
 
         if (gameState.winner) {
-            soundFX.playVictory();
             clearGameStateCookie();
             addLog('🎉 游戏结束！' + (gameState.winner === 'B' ? 'AI获胜' : '玩家获胜'));
-
+            
             setTimeout(() => {
-                if (confirm('是否再来一局？')) {
-                    location.reload();
-                }
-            }, 2000);
+                showGameOverModal(gameState.winner);
+            }, 500);
         } else if (combatLog.winner === 'attacker') {
             soundFX.playVictory();
             if (gameState.steps_left > 0) {
@@ -947,6 +1016,7 @@ function endTurn() {
     gameState.turn = gameState.turn === p1Id ? -1 : p1Id;
     gameState.has_rolled = false;
     gameState.steps_left = 0;
+    gameState.turn_move_used = 0;
     gameState.rolled_by_player = false;
     
     if (gameState.has_used_cannon) {
@@ -1190,9 +1260,21 @@ function executeAIMove() {
         
         if (gameState.steps_left >= moveCost) {
             if (gameState.board[toR][toC] === null) {
+                const pieceTypes = gameState.piece_types;
+                const pieceMoveRange = pieceTypes?.[piece.type]?.move_range || Infinity;
+                const currentTurnMove = gameState.turn_move_used || 0;
+                const dist = Math.abs(toR - fromR) + Math.abs(toC - fromC);
+                
+                if (currentTurnMove + dist > pieceMoveRange) {
+                    addLog(`⚠️ AI本回合移动距离已达上限`);
+                    endAITurn();
+                    return;
+                }
+                
                 gameState.board[toR][toC] = piece;
                 gameState.board[fromR][fromC] = null;
                 gameState.steps_left -= moveCost;
+                gameState.turn_move_used = currentTurnMove + dist;
 
                 addLog(`✅ AI移动到 (${toC}, ${toR})`);
                 soundFX.playPieceMove();
@@ -1231,6 +1313,7 @@ function initiateAICombat(fromPos, toPos) {
         cardBonus = cardToUse.minValue;
         cardName = cardToUse.name;
         useAIStrategyCard(cardToUse.id);
+        currentCombatUsedCard = { cardId: cardToUse.id, name: cardName, side: 'B', bonus: cardBonus };
         addLog(`🤖 AI使用了「${cardName}」，战力+${cardBonus}`);
     }
 
@@ -1296,6 +1379,7 @@ function endAITurn() {
     gameState.turn = p1Id;
     gameState.has_rolled = false;
     gameState.steps_left = 0;
+    gameState.turn_move_used = 0;
     gameState.rolled_by_player = false;
 
     renderBoard(gameState.board);
@@ -1436,6 +1520,17 @@ function showCombatModal(combat, onDismiss) {
     let motivationalText = '';
     const playerWon = (combat.winner === 'attacker' && combat.attacker.side === 'R') || 
                        (combat.winner === 'defender' && combat.defender.side === 'R');
+    
+    let cardUsageHtml = '';
+    if (combat.usedCard) {
+        const cardUserName = combat.usedCard.side === 'R' ? '玩家' : 'AI';
+        const cardColor = combat.usedCard.side === 'R' ? 'var(--ink-red)' : 'var(--ink-black)';
+        cardUsageHtml = `<div style="text-align:center; margin-top:20px; padding:15px; background:linear-gradient(135deg, rgba(139, 69, 19, 0.1), rgba(74, 124, 155, 0.1)); border-radius:8px; border:2px solid var(--ink-brown);">
+            <div style="font-size:14px; color:var(--ink-brown); margin-bottom:8px;">🎴 锦囊使用</div>
+            <div style="font-size:18px; font-weight:bold; color:${cardColor};">${cardUserName}使用了「${combat.usedCard.name}」</div>
+            <div style="font-size:14px; color:var(--ink-brown); margin-top:5px;">战力加成：<strong>+${combat.usedCard.bonus}</strong></div>
+        </div>`;
+    }
 
     if (combat.winner === 'draw') {
         atkResult = '<span style="color:var(--ink-brown);">平局</span>';
@@ -1476,6 +1571,7 @@ function showCombatModal(combat, onDismiss) {
         </div>
         <p style="text-align:center; margin-top:25px; color:var(--ink-brown); font-size:18px; font-style:italic; font-weight:bold;">${motivationalText}</p>
         ${combat.msg ? `<p style="text-align:center; margin-top:15px; color:var(--ink-brown); font-size:14px;">${combat.msg}</p>` : ''}
+        ${cardUsageHtml}
     `;
 
     modal.style.display = 'block';
@@ -1682,3 +1778,36 @@ function updateMobileControlsState() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
+
+function showGameOverModal(winner) {
+    const modal = document.getElementById('game-over-modal');
+    const effect = document.getElementById('game-over-effect');
+    const title = document.getElementById('game-over-title');
+    const subtitle = document.getElementById('game-over-subtitle');
+    
+    if (winner === 'R') {
+        effect.textContent = '🏆';
+        title.textContent = '胜利！';
+        title.style.textShadow = '0 0 30px rgba(255, 215, 0, 1), 0 0 60px rgba(255, 215, 0, 0.8)';
+        subtitle.textContent = '恭喜你击败了敌方枭！';
+        soundFX.playVictory();
+    } else {
+        effect.textContent = '💀';
+        title.textContent = '失败...';
+        title.style.textShadow = '0 0 30px rgba(255, 0, 0, 1), 0 0 60px rgba(255, 0, 0, 0.8)';
+        subtitle.textContent = '我方枭已被击败...';
+        soundFX.playDefeat();
+    }
+    
+    modal.style.display = 'flex';
+    renderBoard(gameState.board);
+}
+
+function restartGame() {
+    document.getElementById('game-over-modal').style.display = 'none';
+    location.reload();
+}
+
+function goToHome() {
+    window.location.href = '/game/bo';
+}

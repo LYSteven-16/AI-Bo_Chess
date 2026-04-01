@@ -175,6 +175,8 @@ function getMoveRange(piece, pos, stepsLeft, gameState) {
 
     const pieceTypes = gameState.piece_types;
     const pieceMoveRange = pieceTypes?.[piece.type]?.move_range || Infinity;
+    const turnMoveUsed = gameState.turn_move_used || 0;
+    const remainingTurnMove = pieceMoveRange - turnMoveUsed;
 
     const ranged = isRangedPiece(piece);
     const rangedTargets = ranged ? getRangedAttackTargets(piece, pos, gameState) : [];
@@ -185,6 +187,7 @@ function getMoveRange(piece, pos, stepsLeft, gameState) {
 
             const dist = Math.abs(targetRow - row) + Math.abs(targetCol - col);
             if (dist > pieceMoveRange) continue;
+            if (turnMoveUsed > 0 && dist > remainingTurnMove) continue;
 
             const toPos = [targetCol, targetRow];
             const target = board[targetRow][targetCol];
@@ -192,17 +195,24 @@ function getMoveRange(piece, pos, stepsLeft, gameState) {
             const pathResult = calculatePathCost(pos, toPos, gameState, piece);
 
             if (pathResult.cost <= stepsLeft) {
+                const isEnemy = target && target.side !== piece.side;
+                const isRanged = isRangedPiece(piece);
+                const combatRange = getRangedAttackRange(piece);
+                const canAttack = isEnemy && (
+                    isRanged ? (dist <= combatRange) : (dist === 1)
+                );
+
                 const moveInfo = {
                     row: targetRow,
                     col: targetCol,
                     cost: pathResult.cost,
                     path: pathResult.path,
-                    isCapture: target && target.side !== piece.side
+                    isCapture: canAttack
                 };
 
                 moveDetails.set(`${targetCol},${targetRow}`, moveInfo);
 
-                if (target && target.side !== piece.side) {
+                if (canAttack) {
                     captureRange.push({ row: targetRow, col: targetCol, cost: pathResult.cost });
                 } else if (!target) {
                     moveRange.push({ row: targetRow, col: targetCol, cost: pathResult.cost });
