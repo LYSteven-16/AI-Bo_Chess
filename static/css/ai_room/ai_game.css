@@ -2177,3 +2177,260 @@
             padding: 0 10px;
         }
     }
+
+    #zero-roll-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 6000;
+    }
+
+    .zero-roll-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(20, 15, 10, 0.75);
+        animation: fadeIn 0.6s ease-out;
+    }
+
+    .zero-roll-content {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: linear-gradient(145deg, 
+            rgba(250, 246, 239, 0.97) 0%,
+            rgba(240, 235, 225, 0.98) 50%,
+            rgba(250, 246, 239, 0.97) 100%
+        );
+        padding: 60px 80px;
+        border: 3px solid var(--ink-brown);
+        border-radius: 20px;
+        text-align: center;
+        box-shadow: 
+            0 0 80px rgba(74, 124, 155, 0.6),
+            0 0 120px rgba(20, 15, 10, 0.4),
+            inset 0 0 60px rgba(74, 124, 155, 0.1);
+        animation: modalReveal 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+        overflow: hidden;
+        min-width: 400px;
+    }
+
+    .ink-splash {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        pointer-events: none;
+        overflow: hidden;
+    }
+
+    .ink-drop {
+        position: absolute;
+        border-radius: 50%;
+        background: radial-gradient(ellipse at center,
+            rgba(74, 124, 155, 0.15) 0%,
+            rgba(74, 124, 155, 0.08) 40%,
+            transparent 70%
+        );
+    }
+
+    .ink-drop-1 {
+        width: 300px;
+        height: 200px;
+        top: -50px;
+        right: -80px;
+        animation: inkExpand1 3s ease-out;
+    }
+
+    .ink-drop-2 {
+        width: 250px;
+        height: 180px;
+        bottom: -40px;
+        left: -60px;
+        animation: inkExpand2 3s ease-out 0.3s;
+    }
+
+    .ink-drop-3 {
+        width: 180px;
+        height: 150px;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        animation: inkExpand3 3s ease-out 0.5s;
+    }
+
+    @keyframes inkExpand1 {
+        0% { transform: scale(0) rotate(0deg); opacity: 0; }
+        20% { transform: scale(0.3) rotate(10deg); opacity: 1; }
+        100% { transform: scale(1.2) rotate(5deg); opacity: 1; }
+    }
+
+    @keyframes inkExpand2 {
+        0% { transform: scale(0) rotate(0deg); opacity: 0; }
+        20% { transform: scale(0.3) rotate(-15deg); opacity: 1; }
+        100% { transform: scale(1.1) rotate(-5deg); opacity: 1; }
+    }
+
+    @keyframes inkExpand3 {
+        0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+        30% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+        100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    }
+
+    .zero-roll-main {
+        position: relative;
+        z-index: 1;
+    }
+
+    .sad-chess-piece {
+        font-size: 80px;
+        margin-bottom: 15px;
+        animation: pieceSad 2s ease-in-out infinite;
+        filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+    }
+
+    @keyframes pieceSad {
+        0%, 100% { transform: translateY(0) rotate(0deg); }
+        25% { transform: translateY(-8px) rotate(-3deg); }
+        75% { transform: translateY(-8px) rotate(3deg); }
+    }
+
+    .zero-roll-title {
+        color: var(--ink-red);
+        font-size: 42px;
+        font-family: 'KaiTi', serif;
+        margin: 0 0 20px 0;
+        letter-spacing: 12px;
+        text-shadow: 
+            2px 2px 0 rgba(196, 30, 58, 0.2),
+            0 0 30px rgba(196, 30, 58, 0.3);
+        animation: titleAppear 0.6s ease-out 0.3s both;
+    }
+
+    @keyframes titleAppear {
+        0% { 
+            opacity: 0; 
+            transform: translateY(20px) scale(0.8);
+            letter-spacing: 20px;
+        }
+        100% { 
+            opacity: 1; 
+            transform: translateY(0) scale(1);
+            letter-spacing: 12px;
+        }
+    }
+
+    .zero-roll-desc {
+        color: var(--ink-brown);
+        font-size: 22px;
+        font-family: 'KaiTi', serif;
+        margin: 0 0 25px 0;
+        animation: descAppear 0.5s ease-out 0.5s both;
+    }
+
+    .zero-roll-poem {
+        color: var(--ink-dark);
+        font-size: 18px;
+        font-family: 'KaiTi', serif;
+        margin: 0 0 35px 0;
+        font-style: italic;
+        animation: poemAppear 0.5s ease-out 0.7s both;
+    }
+
+    @keyframes descAppear {
+        0% { opacity: 0; transform: translateY(10px); }
+        100% { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes poemAppear {
+        0% { opacity: 0; transform: translateY(10px); }
+        100% { opacity: 1; transform: translateY(0); }
+    }
+
+    .zero-roll-btn {
+        background: linear-gradient(135deg, var(--ink-red) 0%, #8B2500 100%);
+        color: white;
+        border: 2px solid var(--ink-brown);
+        padding: 15px 50px;
+        font-size: 20px;
+        font-family: 'KaiTi', serif;
+        border-radius: 10px;
+        cursor: pointer;
+        letter-spacing: 5px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(139, 37, 0, 0.4);
+        animation: btnAppear 0.5s ease-out 0.9s both;
+    }
+
+    .zero-roll-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(139, 37, 0, 0.6);
+        background: linear-gradient(135deg, #c41e3a 0%, var(--ink-red) 100%);
+    }
+
+    .zero-roll-btn:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 10px rgba(139, 37, 0, 0.4);
+    }
+
+    @keyframes btnAppear {
+        0% { opacity: 0; transform: translateY(20px); }
+        100% { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes modalReveal {
+        0% { 
+            opacity: 0; 
+            transform: translate(-50%, -50%) scale(0.7);
+        }
+        50% { 
+            opacity: 1; 
+            transform: translate(-50%, -50%) scale(1.03);
+        }
+        100% { 
+            opacity: 1; 
+            transform: translate(-50%, -50%) scale(1);
+        }
+    }
+
+    @keyframes fadeIn {
+        0% { opacity: 0; }
+        100% { opacity: 1; }
+    }
+
+    @media (max-width: 600px) {
+        .zero-roll-content {
+            padding: 40px 30px;
+            min-width: 280px;
+            margin: 0 15px;
+        }
+
+        .sad-chess-piece {
+            font-size: 60px;
+        }
+
+        .zero-roll-title {
+            font-size: 32px;
+            letter-spacing: 8px;
+        }
+
+        .zero-roll-desc {
+            font-size: 18px;
+        }
+
+        .zero-roll-poem {
+            font-size: 16px;
+        }
+
+        .zero-roll-btn {
+            padding: 12px 35px;
+            font-size: 18px;
+        }
+    }

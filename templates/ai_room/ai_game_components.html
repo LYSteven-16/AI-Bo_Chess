@@ -49,12 +49,22 @@
     <div id="dice-animation" style="display:flex; justify-content:center; gap:30px; margin:10px 0;"></div>
 </div>
 
-<div id="zero-roll-modal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:rgba(250, 246, 239, 0.98); padding:50px; border:4px solid var(--ink-brown); border-radius:16px; z-index:6000; text-align:center; box-shadow: 0 0 60px rgba(74, 124, 155, 0.5);">
-    <div style="font-size:64px; margin-bottom:20px; animation: shake 0.5s ease-in-out;">😢</div>
-    <h2 style="color: var(--ink-red); margin:0 0 15px 0; font-size:28px; font-family: 'KaiTi', serif; letter-spacing:5px;">运道不济</h2>
-    <p style="color: var(--ink-brown); margin:0 0 30px 0; font-size:18px; font-family: 'KaiTi', serif;">掷采为零，此回合无步可用</p>
-    <p style="color: var(--ink-dark); margin:0 0 30px 0; font-size:16px; font-family: 'KaiTi', serif;">莫丧锐气，胜负未分</p>
-    <button onclick="closeZeroRollModal()" style="background:linear-gradient(135deg, var(--ink-red) 0%, #6b1d00 100%); color:white; border:2px solid var(--ink-brown); padding:12px 40px; font-size:18px; font-family: 'KaiTi', serif; border-radius:8px; cursor:pointer; letter-spacing:3px;">继续战斗</button>
+<div id="zero-roll-modal">
+    <div class="zero-roll-overlay"></div>
+    <div class="zero-roll-content">
+        <div class="ink-splash">
+            <div class="ink-drop ink-drop-1"></div>
+            <div class="ink-drop ink-drop-2"></div>
+            <div class="ink-drop ink-drop-3"></div>
+        </div>
+        <div class="zero-roll-main">
+            <div class="sad-chess-piece">&#x2659;</div>
+            <h2 class="zero-roll-title">运道不济</h2>
+            <p class="zero-roll-desc">掷采为零，此回合无步可用</p>
+            <p class="zero-roll-poem">莫丧锐气，胜负未分</p>
+            <button onclick="closeZeroRollModal()" class="zero-roll-btn">继续战斗</button>
+        </div>
+    </div>
 </div>
 
 <div id="turn-announcement" class="turn-announcement">
