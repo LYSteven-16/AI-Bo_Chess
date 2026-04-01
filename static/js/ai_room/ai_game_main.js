@@ -1607,8 +1607,6 @@ function initMobileNavigation() {
     const infoSidebar = document.querySelector('.info-sidebar');
     const rulesToggle = document.getElementById('mobile-rules-toggle');
     const infoToggle = document.getElementById('mobile-info-toggle');
-    const closeRulesBtn = document.getElementById('close-rules-sidebar');
-    const closeInfoBtn = document.getElementById('close-info-sidebar');
     const overlay = document.getElementById('mobile-overlay');
 
     function closeAllSidebars() {
@@ -1617,32 +1615,32 @@ function initMobileNavigation() {
         if (overlay) overlay.classList.remove('show');
     }
 
-    function openRulesSidebar() {
+    function toggleRulesSidebar(e) {
+        e.stopPropagation();
+        const isOpen = rulesSidebar && rulesSidebar.classList.contains('open');
         closeAllSidebars();
-        if (rulesSidebar) rulesSidebar.classList.add('open');
-        if (overlay) overlay.classList.add('show');
+        if (!isOpen) {
+            if (rulesSidebar) rulesSidebar.classList.add('open');
+            if (overlay) overlay.classList.add('show');
+        }
     }
 
-    function openInfoSidebar() {
+    function toggleInfoSidebar(e) {
+        e.stopPropagation();
+        const isOpen = infoSidebar && infoSidebar.classList.contains('open');
         closeAllSidebars();
-        if (infoSidebar) infoSidebar.classList.add('open');
-        if (overlay) overlay.classList.add('show');
+        if (!isOpen) {
+            if (infoSidebar) infoSidebar.classList.add('open');
+            if (overlay) overlay.classList.add('show');
+        }
     }
 
     if (rulesToggle) {
-        rulesToggle.addEventListener('click', openRulesSidebar, { passive: true });
+        rulesToggle.addEventListener('click', toggleRulesSidebar, { passive: true });
     }
 
     if (infoToggle) {
-        infoToggle.addEventListener('click', openInfoSidebar, { passive: true });
-    }
-
-    if (closeRulesBtn) {
-        closeRulesBtn.addEventListener('click', closeAllSidebars, { passive: true });
-    }
-
-    if (closeInfoBtn) {
-        closeInfoBtn.addEventListener('click', closeAllSidebars, { passive: true });
+        infoToggle.addEventListener('click', toggleInfoSidebar, { passive: true });
     }
 
     if (overlay) {

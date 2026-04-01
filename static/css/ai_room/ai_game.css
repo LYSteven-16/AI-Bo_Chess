@@ -1588,24 +1588,6 @@
             transform: translateY(0);
         }
 
-        .mobile-close-btn {
-            display: flex;
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            width: 36px;
-            height: 36px;
-            background: var(--ink-red);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            font-size: 20px;
-            cursor: pointer;
-            align-items: center;
-            justify-content: center;
-            -webkit-tap-highlight-color: transparent;
-        }
-
         .rules-sidebar::before,
         .info-sidebar::before {
             content: '';
@@ -1615,6 +1597,43 @@
             background: var(--ink-light);
             border-radius: 2px;
             margin: 10px auto;
+        }
+
+        .rules-sidebar h3,
+        .info-sidebar h3 {
+            padding: 5px 15px;
+            font-size: 18px;
+        }
+
+        .rules-content {
+            padding: 10px 15px;
+            font-size: 14px;
+        }
+
+        .rules-content p,
+        .rules-content li {
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .players-display {
+            padding: 10px 15px;
+            font-size: 13px;
+        }
+
+        .player-row {
+            padding: 8px 10px;
+            margin-bottom: 6px;
+        }
+
+        .combat-log-list {
+            font-size: 12px;
+            max-height: calc(75vh - 280px);
+        }
+
+        .combat-log-item {
+            padding: 8px 10px;
+            margin-bottom: 5px;
         }
 
         .game-layout {
