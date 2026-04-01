@@ -9,7 +9,10 @@ def create_app():
 
     # 初始化扩展
     db.init_app(app)
+    # 本地测试用
     socketio.init_app(app)
+    # 部署到服务器用
+    #socketio.init_app(app, path='/game/bo/socket.io', cors_allowed_origins="*")
     login_manager.init_app(app)
 
     # 注册蓝图
@@ -35,4 +38,4 @@ def load_user(user_id):
 app = create_app()
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5212, debug=True)
+    socketio.run(app, port=5212, debug=True)

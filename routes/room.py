@@ -10,13 +10,6 @@ import random
 # 然后在使用的地方修改为
 CARD_CONFIG = Config.CARD_CONFIG  # 添加这一行
 
-# AI战绩统计
-AI_STATS = {
-    'ai_wins': 0,
-    'ai_losses': 0,
-    'total_games': 0
-}
-
 room_bp = Blueprint('room', __name__, url_prefix='/game/bo')
 
 # --- 页面路由 (HTTP View) ---
@@ -58,7 +51,7 @@ def room_view(room_id):
 
 @room_bp.route('/ai-room')
 def ai_room_view():
-    """AI对战专用页面 - 临时房间，不参与房间号排序"""
+    """AI对战专用页面"""
     map_name = request.args.get('map', 'default_map')
     
     map_data = MapLoader.load_map(map_name)
@@ -95,11 +88,6 @@ def ai_room_view():
     }
 
     return render_template('ai_game.html', **context)
-
-@room_bp.route('/ai-room/<int:room_id>')
-def ai_room_view_by_id(room_id):
-    """AI对战专用页面 - 通过房间ID访问（已弃用）"""
-    return redirect(url_for('room.ai_room_view'))
 
 # --- API 接口 (用于表单提交，返回JSON让前端跳转) ---
 
@@ -300,14 +288,13 @@ def save_map_api():
         return jsonify({'success': False, 'msg': f'保存失败: {str(e)}'})
 
 @room_bp.route('/api/create-ai', methods=['POST'])
+@login_required
 def create_ai_room_api():
-    """创建AI游戏房间（无需登录，匿名玩家也可挑战）"""
     # 获取请求数据
-    data = request.json or {}
+    data = request.json
     map_name = data.get('map_name', 'default_map')
     
     # 加载地图数据
-    from map_loader import MapLoader, MapData
     map_data = MapLoader.load_map(map_name)
     map_info = MapData(map_data)
     
@@ -330,24 +317,14 @@ def create_ai_room_api():
         if 0 <= y < height and 0 <= x < width:
             initial_board[y][x] = {'type': piece['type'], 'side': 'B'}
 
-    # 处理玩家ID - 支持匿名玩家
-    if current_user.is_authenticated:
-        player_id = current_user.id
-        player_key = str(player_id)
-    else:
-        # 匿名玩家使用临时ID
-        import uuid
-        player_id = -hash(str(uuid.uuid4())) % 1000000  # 生成负数ID避免与真实用户冲突
-        player_key = f"anon_{abs(player_id)}"
-
-    # 初始化卡牌 - 为人类玩家初始化
+    # 初始化玩家卡牌库存
     initial_cards = {}
-    initial_cards[player_key] = {k: v['limit'] for k, v in CARD_CONFIG.items()}
+    initial_cards[str(current_user.id)] = {k: v['limit'] for k, v in CARD_CONFIG.items()}
 
     # 构建游戏状态
     game_state = {
         'board': initial_board,
-        'turn': player_id,  # 人类玩家先手
+        'turn': current_user.id,
         'turn_number': 1,
         'steps_left': 0,
         'has_rolled': False,
@@ -357,25 +334,14 @@ def create_ai_room_api():
         'active_cards': {},
         'terrain': map_data['terrain'],
         'terrain_types': map_data['terrain_types'],
-        'piece_types': map_data['piece_types'],
-        'is_ai_game': True,  # 标记这是一个AI对战游戏
-        'ai_side': 'B',  # AI控制黑方
-        'is_anonymous': not current_user.is_authenticated  # 标记是否匿名
+        'piece_types': map_data['piece_types']
     }
 
-    # 创建房间，直接进入playing状态，player2_id设为-1表示AI玩家
-    new_room = GameRoom(player1_id=player_id, player2_id=-1, status='playing')
+    new_room = GameRoom(player1_id=current_user.id, status='waiting')
     new_room.set_state(game_state)
     db.session.add(new_room)
-    
-    # 增加玩家的棋局数（仅对登录用户）
-    if current_user.is_authenticated:
-        user = User.query.get(current_user.id)
-        if user:
-            user.games_played += 1
-    
     db.session.commit()
-    
+
     return jsonify({'success': True, 'room_id': new_room.id})
 
 @room_bp.route('/api/get-maps')
@@ -831,46 +797,5 @@ def get_ai_init_state():
         }
         
         return jsonify({'success': True, 'state': game_state})
-    except Exception as e:
-        return jsonify({'success': False, 'msg': str(e)})
-
-@room_bp.route('/api/room-state/<int:room_id>')
-def get_room_state_api(room_id):
-    """获取房间状态（用于纯前端AI对战）"""
-    try:
-        room = GameRoom.query.get(room_id)
-        if not room:
-            return jsonify({'success': False, 'msg': '房间不存在'})
-        
-        state = room.get_state()
-        return jsonify({'success': True, 'state': state})
-    except Exception as e:
-        return jsonify({'success': False, 'msg': str(e)})
-
-@room_bp.route('/api/ai-stats')
-def get_ai_stats_api():
-    """获取AI战绩统计"""
-    return jsonify({
-        'success': True,
-        'ai_wins': AI_STATS['ai_wins'],
-        'ai_losses': AI_STATS['ai_losses'],
-        'total_games': AI_STATS['total_games']
-    })
-
-@room_bp.route('/api/report-ai-result', methods=['POST'])
-def report_ai_result_api():
-    """游戏结束时报告AI胜负结果"""
-    try:
-        data = request.json
-        room_id = data.get('room_id')
-        ai_won = data.get('ai_won', False)
-        
-        AI_STATS['total_games'] += 1
-        if ai_won:
-            AI_STATS['ai_wins'] += 1
-        else:
-            AI_STATS['ai_losses'] += 1
-        
-        return jsonify({'success': True, 'msg': '结果已记录'})
     except Exception as e:
         return jsonify({'success': False, 'msg': str(e)})
