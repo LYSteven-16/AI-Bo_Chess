@@ -2,27 +2,39 @@ let pieceActionMode = null;
 let moveDetailsMap = new Map();
 
 function showPieceActionModal(piece) {
+    console.log('[DEBUG] showPieceActionModal 被调用', piece);
+    
     const modal = document.getElementById('piece-action-modal');
     const title = document.getElementById('piece-action-title');
     const info = document.getElementById('piece-action-info');
     const moveBtn = document.getElementById('btn-action-move');
     const attackBtn = document.getElementById('btn-action-attack');
     
-    if (!modal || !title || !info) return;
+    console.log('[DEBUG] modal元素:', modal, 'title:', title, 'info:', info);
     
-    const pieceTypes = gameState?.piece_types || {};
+    if (!modal) {
+        console.error('[ERROR] 找不到 piece-action-modal 元素');
+        return;
+    }
+    if (!title || !info) {
+        console.error('[ERROR] 找不到模态框的子元素');
+        return;
+    }
+    
+    const pieceTypes = (gameState && gameState.piece_types) || {};
     const pieceType = pieceTypes[piece.type] || {};
-    const pieceName = pieceType.name || piece.type;
+    const pieceName = pieceType.name || piece.type || '未知棋子';
     
     title.innerText = `选择「${pieceName}」的动作`;
     
-    const stepsLeft = gameState.steps_left || 0;
+    const stepsLeft = (gameState && gameState.steps_left) || 0;
     info.innerHTML = `剩余步数：<strong>${stepsLeft}</strong> 步`;
     
     moveBtn.style.display = 'inline-block';
     attackBtn.style.display = 'inline-block';
     
     modal.style.display = 'block';
+    console.log('[DEBUG] 模态框已显示');
 }
 
 function hidePieceActionModal() {
