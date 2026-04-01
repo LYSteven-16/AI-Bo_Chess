@@ -111,7 +111,7 @@
         color: var(--ink-brown);
         border-bottom: 2px solid var(--ink-brown);
         padding-bottom: 10px;
-        font-size: 32px;
+        font-size: 21px;
         margin: 0 0 10px 0;
         flex-shrink: 0;
     }
@@ -120,7 +120,7 @@
         flex: 1;
         overflow-y: auto;
         line-height: 1.6;
-        font-size: 24px;
+        font-size: 16px;
     }
 
     .rules-content details {
@@ -133,7 +133,7 @@
         cursor: pointer;
         color: var(--ink-brown);
         font-weight: bold;
-        font-size: 28px;
+        font-size: 19px;
         padding: 4px 0;
         list-style: none;
         display: flex;
@@ -147,7 +147,7 @@
 
     .rules-content summary::before {
         content: "▶";
-        font-size: 20px;
+        font-size: 13px;
         transition: transform 0.2s;
     }
 
@@ -162,7 +162,7 @@
     .rules-content p {
         margin: 6px 0 4px 0;
         color: var(--ink-brown);
-        font-size: 24px;
+        font-size: 16px;
         padding-left: 8px;
     }
 
