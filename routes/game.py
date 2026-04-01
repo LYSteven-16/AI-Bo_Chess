@@ -7,6 +7,7 @@ from config import CARD_CONFIG
 from models import GameRoom, User, CombatLog
 from game_logic.ai_player import AIPlayer, create_ai_player
 from game_logic.piece_manager import PieceManager
+from map_loader import MapLoader
 
 # --- 辅助函数: 掷采算法 ---
 def generate_sticks():
@@ -150,17 +151,17 @@ def handle_move(data):
     
     # 检查是否是移动操作（目标为空）
     if target is None:
-        # 移动操作：只限制必须直线移动，不限制距离
-        if fr == tr or fc == tc:
-            # 检查路径上是否有阻挡
-            if not is_path_blocked(board, fr, fc, tr, tc):
-                valid_move = True
-            else:
-                emit('error', {'msg': '路径上有阻挡，无法移动'})
-                return
-        else:
+        # 检查是否是直线移动（对于远程棋子）
+        if fr != tr and fc != tc:
             emit('error', {'msg': '移动只能直线进行'})
             return
+        
+        # 检查路径上是否有阻挡
+        if is_path_blocked(board, fr, fc, tr, tc):
+            emit('error', {'msg': '路径上有阻挡，无法移动'})
+            return
+        
+        valid_move = True
     else:
         # 攻击操作
         if attack_type == 'melee':
@@ -337,16 +338,16 @@ def handle_move(data):
                             total_cost += cell_cost
                     
                     # 检查是否有足够的步数
-                    if state['steps_left'] < total_cost:
-                        emit('error', {'msg': f'步数不足，移动需要 {total_cost} 步'})
+                    if state['steps_left'] < 1:
+                        emit('error', {'msg': '步数不足'})
                         return
                     
                     # 执行移动
                     board[tr][tc] = attacker
                     board[fr][fc] = None
                     
-                    # 扣除步数并检查回合结束
-                    state['steps_left'] -= total_cost
+                    # 扣除步数并检查回合结束（每次移动只消耗1步）
+                    state['steps_left'] -= 1
                     turn_ended = check_turn_end(room, state) # 调用辅助函数
                     
                     room.set_state(state)
@@ -436,16 +437,16 @@ def handle_move(data):
                         total_cost += cell_cost
                 
                 # 检查是否有足够的步数
-                if state['steps_left'] < total_cost:
-                    emit('error', {'msg': f'步数不足，移动需要 {total_cost} 步'})
+                if state['steps_left'] < 1:
+                    emit('error', {'msg': '步数不足'})
                     return
                 
                 # 执行移动
                 board[tr][tc] = attacker
                 board[fr][fc] = None
                 
-                # 扣除步数并检查回合结束
-                state['steps_left'] -= total_cost
+                # 扣除步数并检查回合结束（每次移动只消耗1步）
+                state['steps_left'] -= 1
                 turn_ended = check_turn_end(room, state) # 调用辅助函数
                 
                 room.set_state(state)
@@ -1432,12 +1433,16 @@ def check_turn_end(room, state):
         # 重置炮的攻击使用状态
         if 'has_used_cannon' in state:
             state['has_used_cannon'] = {}
-        
+
         # 增加回合数
         if 'turn_number' not in state:
             state['turn_number'] = 1
         state['turn_number'] += 1
-        
+
+        # 【关键修复】先保存状态到数据库
+        room.set_state(state)
+        db.session.commit()
+
         return True
     return False
 
@@ -1907,3 +1912,5 @@ def log_combat(room_id, turn_number, atk_info, def_info, combat_log, distance, a
     # 保存到数据库
     db.session.add(combat_log_entry)
     # 注意：这里不提交，由调用方统一提交
+
+

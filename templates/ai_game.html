@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}AI对战 - 博棋{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/ai_room/ai_game.css">
+<style>
+    html, body {
+        overflow: hidden !important;
+        height: 100%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% include "ai_room/ai_game_components.html" %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/ai_player.js"></script>
+<script src="/static/js/ai_room/ai_game_sound.js"></script>
+<script src="/static/js/ai_room/ai_game_combat.js"></script>
+<script src="/static/js/ai_room/ai_game_utils.js"></script>
+<script src="/static/js/ai_room/ai_game_board.js"></script>
+<script src="/static/js/ai_room/ai_game_main.js"></script>
+<script>
+    const myUserId = {{ player_id }};
+    const p1Id = {{ room.player1_id }};
+    const p1Name = "{{ p1_name }}";
+    const p2Name = "{{ p2_name }}";
+    const mapName = "{{ map_name or 'default_map' }}";
+    
+    let mySide = myUserId === p1Id ? 'R' : 'B';
+    let globalBoardState = [];
+    let selectedPiece = null;
+    let isAIThinking = false;
+    let showTerrainNumbers = true;
+    let isGameLocked = false;
+    let isFirstTurn = true;
+
+    let gameState = null;
+    
+    const STRATEGY_CARDS = {
+        erwei: { name: '二位定一', minValue: 16, total: 7 },
+        shouwei: { name: '首位定一', minValue: 32, total: 5 },
+        shuangxing: { name: '双星高照', minValue: 48, total: 3 },
+        sanyang: { name: '三阳开泰', minValue: 56, total: 2 }
+    };
+    
+    let strategyCardCounts = {
+        erwei: 7,
+        shouwei: 5,
+        shuangxing: 3,
+        sanyang: 2
+    };
+    
+    let selectedStrategyCard = null;
+    let pendingCombatBonus = 0;
+    
+    function selectStrategyCard(cardId) {
+        if (gameState.turn !== p1Id) return;
+        if (strategyCardCounts[cardId] <= 0) return;
+        
+        if (selectedStrategyCard === cardId) {
+            selectedStrategyCard = null;
+            pendingCombatBonus = 0;
+            document.querySelectorAll('.strategy-card').forEach(el => el.classList.remove('selected'));
+        } else {
+            selectedStrategyCard = cardId;
+            pendingCombatBonus = STRATEGY_CARDS[cardId].minValue;
+            document.querySelectorAll('.strategy-card').forEach(el => el.classList.remove('selected'));
+            document.getElementById('card-' + cardId).classList.add('selected');
+            addLog(`🎴 选择锦囊: ${STRATEGY_CARDS[cardId].name} (战力>${pendingCombatBonus})`);
+        }
+    }
+    
+    function useSelectedStrategyCard() {
+        if (selectedStrategyCard && strategyCardCounts[selectedStrategyCard] > 0) {
+            strategyCardCounts[selectedStrategyCard]--;
+            document.getElementById('count-' + selectedStrategyCard).innerText = strategyCardCounts[selectedStrategyCard];
+            
+            const cardEl = document.getElementById('card-' + selectedStrategyCard);
+            cardEl.classList.remove('selected');
+            cardEl.classList.add('used');
+            
+            addLog(`🎴 使用锦囊: ${STRATEGY_CARDS[selectedStrategyCard].name}`);
+            
+            const usedCard = selectedStrategyCard;
+            selectedStrategyCard = null;
+            pendingCombatBonus = 0;
+            
+            setTimeout(() => {
+                cardEl.classList.remove('used');
+            }, 500);
+            
+            return STRATEGY_CARDS[usedCard].minValue;
+        }
+        return 0;
+    }
+    
+    function resetStrategyCardsForNewTurn() {
+        selectedStrategyCard = null;
+        pendingCombatBonus = 0;
+        document.querySelectorAll('.strategy-card').forEach(el => el.classList.remove('selected'));
+        updateStrategyCardsUI();
+    }
+    
+    function updateStrategyCardsUI() {
+        for (const cardId in strategyCardCounts) {
+            const count = strategyCardCounts[cardId];
+            const countEl = document.getElementById('count-' + cardId);
+            const cardEl = document.getElementById('card-' + cardId);
+            if (countEl) countEl.innerText = count;
+            if (cardEl) {
+                cardEl.classList.toggle('disabled', count <= 0 || gameState.turn !== p1Id);
+            }
+        }
+    }
+    
+    function addLog(msg) {
+        const logArea = document.getElementById('log-area');
+        if (!logArea) return;
+        const d = document.createElement('div');
+        d.innerText = msg;
+        logArea.prepend(d);
+    }
+</script>
+{% endblock %}

@@ -27,3 +27,71 @@ nohup python3 -m gunicorn --worker-class eventlet -w 1 -b 127.0.0.1:5211 app:app
 **本项目使用登录功能为muvocal auth sso单点登录，可以联系管理员，或者修改使用自主登录功能，如不使用sso，请修改数据库用户表，该表内无密码字段**
 
 游戏规则见： [[https://muvocal.com/game/bo/guide]]
+
+---
+
+## 🤖 AI对战版本 (分支: ai对战版本)
+
+本分支实现了前端AI对战功能，可以在单人模式下与AI进行对战。
+
+### 新增功能
+
+#### 1. AI对战房间
+- 访问 `/ai_game/<map_name>` 即可创建AI对战房间
+- AI自动控制黑方（方），玩家控制红方（黑方）
+- AI具有智能决策能力，会主动进攻和防守
+
+#### 2. 水墨风格界面
+- 全新水墨丹青风格UI设计
+- 竹绿色用于移动指示器
+- 统一的棕色/红色水墨配色
+
+#### 3. 战斗系统增强
+- 每场战斗消耗1步
+- 战斗后显示详细战报
+- 招募系统：战斗失败方有机会获得新棋子
+
+#### 4. 音效系统
+- BGM背景音乐（可开关）
+- 棋子移动音效
+- 战斗音效
+- 回合结束提示音
+
+#### 5. 地形系统
+- 平原：基础移动和战斗
+- 水域：移动成本x2，战斗加成0.8
+- 山地：移动成本x2，战斗加成1.2
+- 城墙：禁止通行
+
+### 文件结构
+```
+static/
+├── js/
+│   ├── ai_player.js              # AI决策核心算法
+│   └── ai_room/
+│       ├── ai_game_main.js       # 主游戏逻辑
+│       ├── ai_game_board.js      # 棋盘渲染
+│       ├── ai_game_combat.js     # 战斗系统
+│       ├── ai_game_sound.js      # 音效管理
+│       └── ai_game_utils.js      # 工具函数
+└── css/
+    └── ai_room/
+        └── ai_game.css           # AI对战样式
+
+templates/
+├── ai_game.html                  # AI对战主页面
+└── ai_room/
+    └── ai_game_components.html   # 游戏组件模板
+```
+
+### 本地开发
+```bash
+python3 app.py
+# 访问 http://localhost:5211/ai_game/default_map
+```
+
+### AI策略
+- 积极进攻：优先攻击敌方棋子
+- 保护枭：枭会保持在安全位置
+- 地形利用：占领高处获得战斗优势
+- 路线规划：多路协同进攻
