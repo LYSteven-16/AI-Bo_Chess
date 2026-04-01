@@ -1,30 +1,7 @@
-// ========== Cookie 存储系统 ==========
+// ========== LocalStorage 存储系统 ==========
 
-const COOKIE_NAME = 'liubo_game_state';
-const COOKIE_EXPIRY_DAYS = 7;
-
-function setCookie(name, value, days) {
-    const expires = new Date();
-    expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
-    document.cookie = name + '=' + encodeURIComponent(value) + ';expires=' + expires.toUTCString() + ';path=/;SameSite=Lax';
-}
-
-function getCookie(name) {
-    const nameEQ = name + '=';
-    const ca = document.cookie.split(';');
-    for (let i = 0; i < ca.length; i++) {
-        let c = ca[i];
-        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-        if (c.indexOf(nameEQ) === 0) {
-            return decodeURIComponent(c.substring(nameEQ.length, c.length));
-        }
-    }
-    return null;
-}
-
-function deleteCookie(name) {
-    document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;SameSite=Lax';
-}
+const STORAGE_KEY = 'liubo_game_state';
+const STORAGE_EXPIRY_DAYS = 7;
 
 function saveGameStateToCookie() {
     if (!gameState || gameState.winner) return;
@@ -47,49 +24,49 @@ function saveGameStateToCookie() {
     };
 
     try {
-        setCookie(COOKIE_NAME, JSON.stringify(stateToSave), COOKIE_EXPIRY_DAYS);
-        console.log('[Cookie] 游戏状态已保存');
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
+        console.log('[Storage] 游戏状态已保存到 localStorage');
     } catch (e) {
-        console.error('[Cookie] 保存失败:', e);
+        console.error('[Storage] 保存失败:', e);
     }
 }
 
 function loadGameStateFromCookie() {
     try {
-        const saved = getCookie(COOKIE_NAME);
+        const saved = localStorage.getItem(STORAGE_KEY);
         if (!saved) {
-            console.log('[Cookie] 没有找到保存的状态');
+            console.log('[Storage] 没有找到保存的状态');
             return null;
         }
 
         const state = JSON.parse(saved);
         const age = Date.now() - (state.timestamp || 0);
-        const maxAge = COOKIE_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
+        const maxAge = STORAGE_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
 
         if (age > maxAge) {
-            console.log('[Cookie] 保存的状态已过期');
-            deleteCookie(COOKIE_NAME);
+            console.log('[Storage] 保存的状态已过期');
+            localStorage.removeItem(STORAGE_KEY);
             return null;
         }
 
         if (state.winner) {
-            console.log('[Cookie] 游戏已结束，忽略保存的状态');
-            deleteCookie(COOKIE_NAME);
+            console.log('[Storage] 游戏已结束，忽略保存的状态');
+            localStorage.removeItem(STORAGE_KEY);
             return null;
         }
 
-        console.log('[Cookie] 从 cookie 恢复游戏状态');
+        console.log('[Storage] 从 localStorage 恢复游戏状态');
         return state;
     } catch (e) {
-        console.error('[Cookie] 恢复失败:', e);
-        deleteCookie(COOKIE_NAME);
+        console.error('[Storage] 恢复失败:', e);
+        localStorage.removeItem(STORAGE_KEY);
         return null;
     }
 }
 
 function clearGameStateCookie() {
-    deleteCookie(COOKIE_NAME);
-    console.log('[Cookie] 游戏状态已清除');
+    localStorage.removeItem(STORAGE_KEY);
+    console.log('[Storage] 游戏状态已清除');
 }
 
 // ========== 战斗系统 ==========
@@ -1483,10 +1460,14 @@ function init() {
     isGameLocked = true;
     lastTurn = null;
     console.log('[DEBUG] init() 开始执行');
+    console.log('[DEBUG] p1Id =', p1Id);
+    console.log('[DEBUG] localStorage keys =', Object.keys(localStorage));
 
     const savedState = loadGameStateFromCookie();
+    console.log('[DEBUG] savedState =', savedState);
 
     if (savedState) {
+        console.log('[DEBUG] 从 localStorage 恢复游戏');
         initializeGameState(savedState);
         initializeAIStrategyCards();
 
@@ -1504,12 +1485,18 @@ function init() {
 
         addLog('🔄 从存档恢复游戏！');
 
+        const welcomeScreen = document.getElementById('welcome-screen');
+        if (welcomeScreen) {
+            welcomeScreen.classList.remove('show');
+        }
+
         setTimeout(() => {
             adjustSidebarsToBoardBottom();
             window.addEventListener('resize', adjustSidebarsToBoardBottom);
         }, 100);
 
-        showGameStartAnnouncement(() => {
+        showTurnAnnouncement('R', () => {
+            isGameLocked = false;
             if (gameState.turn !== p1Id) {
                 waitForAnnouncement(() => executeAITurn());
             } else {
@@ -1519,6 +1506,7 @@ function init() {
         return;
     }
 
+    console.log('[DEBUG] 没有从 localStorage 恢复，从服务器初始化');
     fetch(`/game/bo/api/ai-init?map=${mapName || 'default_map'}`)
         .then(response => response.json())
         .then(data => {

@@ -63,6 +63,12 @@ nohup python3 -m gunicorn --worker-class eventlet -w 1 -b 127.0.0.1:5211 app:app
 - 山地：移动成本x2，战斗加成1.2
 - 城墙：禁止通行
 
+#### 6. 游戏存档系统
+- 使用 localStorage 自动保存游戏进度
+- 刷新页面后自动恢复游戏状态
+- 存档有效期 7 天
+- 游戏结束后自动清除存档
+
 ### 文件结构
 ```
 static/
