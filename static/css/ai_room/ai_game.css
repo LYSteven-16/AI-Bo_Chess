@@ -1,7 +1,8 @@
     html, body {
-        overflow: hidden !important;
-        height: 100%;
-    }
+    overflow: auto !important;
+    height: auto;
+    min-height: 100vh;
+}
 
     :root {
         --cell-size: 75px;
@@ -95,11 +96,10 @@
         overflow: hidden;
         margin-top: 20px;
         align-self: flex-start;
-        position: fixed;
-        left: 20px;
-        top: 80px;
+        position: sticky;
+        top: 20px;
         z-index: 5;
-        max-height: calc(100vh - 200px);
+        max-height: calc(100vh - 40px);
         pointer-events: auto;
     }
 
@@ -174,11 +174,10 @@
         gap: 15px;
         margin-top: 20px;
         align-self: flex-start;
-        position: fixed;
-        right: 20px;
-        top: 80px;
+        position: sticky;
+        top: 20px;
         z-index: 5;
-        max-height: calc(100vh - 200px);
+        max-height: calc(100vh - 40px);
         pointer-events: auto;
     }
 

@@ -3,6 +3,10 @@ let aiPlayer = null;
 
 function initializeGameState(initialState) {
     gameState = JSON.parse(JSON.stringify(initialState));
+    
+    if (gameState.rolled_by_player === true && gameState.has_rolled === false) {
+        gameState.has_rolled = true;
+    }
 
     if (gameState.piece_types) {
         pieceManager = new AIPieceManager(gameState.piece_types);

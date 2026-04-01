@@ -946,6 +946,11 @@ function endTurnManual() {
 }
 
 function skipTurn() {
+    console.log('[DEBUG] skipTurn 被调用');
+    console.log('[DEBUG] gameState:', gameState);
+    console.log('[DEBUG] p1Id:', p1Id);
+    console.log('[DEBUG] isAIThinking:', isAIThinking);
+    
     if (!gameState) {
         addLog('⚠️ 游戏未初始化');
         return;
@@ -958,11 +963,17 @@ function skipTurn() {
         addLog('⚠️ 当前不是你的回合');
         return;
     }
-    if (gameState.has_rolled === false) {
+    if (gameState.has_rolled === false && gameState.rolled_by_player === false) {
         addLog('⚠️ 请先掷采');
         return;
     }
-    gameState.steps_left = 0;
+    if (gameState.steps_left <= 0) {
+        addLog('⏭️ 跳过回合');
+        soundFX.playClick();
+        saveGameStateToCookie();
+        endTurn();
+        return;
+    }
     addLog('⏭️ 跳过剩余步数');
     soundFX.playClick();
     endTurn();
@@ -1468,6 +1479,10 @@ function init() {
 
     if (savedState) {
         console.log('[DEBUG] 从 localStorage 恢复游戏');
+        console.log('[DEBUG] savedState.turn:', savedState.turn, 'p1Id:', p1Id);
+        console.log('[DEBUG] savedState.has_rolled:', savedState.has_rolled);
+        console.log('[DEBUG] savedState.steps_left:', savedState.steps_left);
+        
         initializeGameState(savedState);
         initializeAIStrategyCards();
 
@@ -1483,6 +1498,10 @@ function init() {
         updateInfo();
         updateButtonState();
 
+        console.log('[DEBUG] 恢复后 gameState.turn:', gameState.turn, 'p1Id:', p1Id);
+        console.log('[DEBUG] 恢复后 gameState.has_rolled:', gameState.has_rolled);
+        console.log('[DEBUG] 恢复后 gameState.steps_left:', gameState.steps_left);
+        
         addLog('🔄 从存档恢复游戏！');
 
         const welcomeScreen = document.getElementById('welcome-screen');
@@ -1583,21 +1602,13 @@ function showGameStartAnnouncement(onComplete) {
 }
 
 function adjustSidebarsToBoardBottom() {
-    const board = document.getElementById('game-board');
-    const rulesSidebar = document.querySelector('.rules-sidebar');
-    const infoSidebar = document.querySelector('.info-sidebar');
-    
-    if (!board || !rulesSidebar || !infoSidebar) return;
-    
-    const boardBottom = board.getBoundingClientRect().bottom;
-    const padding = 70;
-    const targetHeight = boardBottom - padding;
-    
-    rulesSidebar.style.height = targetHeight + 'px';
-    infoSidebar.style.height = targetHeight + 'px';
+    // 侧栏现在使用 CSS sticky 定位，不再需要 JS 动态调整
+    // 保留此函数以避免其他代码调用出错
 }
 
 function startPlayerTurn() {
+    console.log('[DEBUG] startPlayerTurn 被调用');
+    console.log('[DEBUG] 当前状态 - has_rolled:', gameState.has_rolled, 'steps_left:', gameState.steps_left);
     isGameLocked = true;
     isGameLocked = false;
     autoRollForPlayer();
