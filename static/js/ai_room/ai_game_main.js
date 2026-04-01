@@ -662,14 +662,15 @@ function resolveCombat() {
             }
         } else if (combatLog.winner === 'defender') {
             soundFX.playDefeat();
-            if (combat.defender.side === 'B') {
-                endAITurn();
-            } else {
-                isAIThinking = false;
-                if (gameState.steps_left > 0) {
-                    addLog('✅ 防守成功，回合继续');
+            if (gameState.steps_left > 0) {
+                if (combat.attacker.side === 'B') {
+                    executeAIMove();
+                } else {
                     updateInfo();
-                    updateButtonState();
+                }
+            } else {
+                if (combat.attacker.side === 'B') {
+                    endAITurn();
                 } else {
                     endTurn();
                 }
@@ -685,7 +686,6 @@ function resolveCombat() {
                 if (combat.attacker.side === 'B') {
                     endAITurn();
                 } else {
-                    isAIThinking = false;
                     endTurn();
                 }
             }

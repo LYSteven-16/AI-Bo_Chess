@@ -1,10 +1,1 @@
-/Users/liuyulin/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
-  warnings.warn(
- * Restarting with stat
-/Users/liuyulin/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
-  warnings.warn(
- * Debugger is active!
- * Debugger PIN: 549-823-704
-(11808) wsgi starting up on http://127.0.0.1:5212
-(11808) accepted ('127.0.0.1', 56331)
-127.0.0.1 - - [01/Apr/2026 10:36:47] "GET /game/bo HTTP/1.1" 308 436 0.002259
+nohup: python: No such file or directory
