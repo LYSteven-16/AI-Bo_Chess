@@ -1192,7 +1192,7 @@
         if (!state.cards) return;
 
         // 基础变量
-        const myUserId = "{{ current_user.id }}";
+        const myUserId = "1";
         const roomPlayer1Id = "{{ room.player1_id }}";
         const myCards = state.cards[myUserId] || {}; 
         const mySide = (String(myUserId) === String(roomPlayer1Id)) ? 'R' : 'B';

@@ -1,12 +1,19 @@
 import random
 import json
-from flask_login import current_user
 from flask_socketio import emit
-from extensions import db, socketio
+from extensions import db, socketio, CURRENT_USER_ID, CURRENT_USER_NAME
 from config import CARD_CONFIG
 from models import GameRoom, User, CombatLog
 from game_logic.piece_manager import PieceManager
-from map_loader import MapLoader
+from map_loader import MapLoader, MapData
+
+def get_current_user_id():
+    """获取当前用户ID"""
+    return CURRENT_USER_ID
+
+def get_current_user_name():
+    """获取当前用户名"""
+    return CURRENT_USER_NAME
 
 # --- 辅助函数: 掷采算法 ---
 def generate_sticks():
@@ -26,6 +33,64 @@ def generate_sticks():
     
     return sticks, move_val, combat_val
 
+# --- AI 游戏创建事件 ---
+@socketio.on('create_ai_game')
+def handle_create_ai_game(data):
+    """创建 AI 对战游戏"""
+    map_name = data.get('map_name', 'default_map')
+    
+    try:
+        map_data = MapLoader.load_map(map_name)
+        map_info = MapData(map_data)
+        
+        width = map_info.width
+        height = map_info.height
+        initial_board = []
+        for _ in range(height):
+            initial_board.append([None] * width)
+        
+        for piece in map_info.get_initial_pieces('R'):
+            x, y = piece['x'], piece['y']
+            if 0 <= y < height and 0 <= x < width:
+                initial_board[y][x] = {'type': piece['type'], 'side': 'R'}
+        
+        for piece in map_info.get_initial_pieces('B'):
+            x, y = piece['x'], piece['y']
+            if 0 <= y < height and 0 <= x < width:
+                initial_board[y][x] = {'type': piece['type'], 'side': 'B'}
+        
+        initial_cards = {}
+        initial_cards[str(get_current_user_id())] = {k: v['limit'] for k, v in CARD_CONFIG.items()}
+        
+        game_state = {
+            'board': initial_board,
+            'turn': get_current_user_id(),
+            'turn_number': 1,
+            'steps_left': 0,
+            'has_rolled': False,
+            'winner': None,
+            'cards': initial_cards,
+            'active_card': None,
+            'active_cards': {},
+            'terrain': map_data['terrain'],
+            'terrain_types': map_data['terrain_types'],
+            'piece_types': map_data['piece_types']
+        }
+        
+        new_room = GameRoom(player1_id=get_current_user_id(), status='playing')
+        new_room.set_state(game_state)
+        db.session.add(new_room)
+        db.session.commit()
+        
+        emit('game_created', {
+            'room_id': new_room.id,
+            'state': game_state,
+            'map_name': map_name
+        })
+        
+    except Exception as e:
+        emit('error', {'msg': f'创建游戏失败: {str(e)}'})
+
 # --- SocketIO 事件 ---
 
 @socketio.on('roll_for_turn')
@@ -35,7 +100,7 @@ def handle_roll(data):
     room = GameRoom.query.get(room_id)
     state = room.get_state()
     
-    if state['turn'] != current_user.id:
+    if state['turn'] != get_current_user_id():
         emit('error', {'msg': '不是你的回合'})
         return
         
@@ -86,7 +151,7 @@ def handle_move(data):
     if not room or room.status != 'playing': return
 
     state = room.get_state()
-    current_player_id = current_user.id
+    current_player_id = get_current_user_id()
     
     # --- 1. 基础校验 (保持不变) ---
     if state['turn'] != current_player_id:
@@ -517,7 +582,7 @@ def handle_combat_roll(data):
     k_value = data.get('k', 0.1)
     
     # 2. 生成随机数和应用卡牌效果
-    combat_data = process_combat_roll(state, current_user.id, user_side, role, combat)
+    combat_data = process_combat_roll(state, get_current_user_id(), user_side, role, combat)
     
     # 3. 记录结果到状态
     update_combat_state(combat, role, combat_data)
@@ -552,14 +617,14 @@ def validate_combat_roll_request(data):
         return {'valid': False, 'message': '当前没有激活的决斗'}
     
     # 判定身份
-    user_side = 'R' if room.player1_id == current_user.id else 'B'
+    user_side = 'R' if room.player1_id == get_current_user_id() else 'B'
     role = None
     if user_side == combat['attacker']['side']:
         role = 'attacker'
     elif user_side == combat['defender']['side']:
         role = 'defender'
     else:
-        print(f"错误: 用户 {current_user.id} 不是决斗参与者")
+        print(f"错误: 用户 {get_current_user_id()} 不是决斗参与者")
         return {'valid': False, 'message': '你不是当前决斗的参与者'}
     
     # print(f"用户身份: {role} ({user_side})")
@@ -818,7 +883,7 @@ def resolve_combat(room, state):
             # 标记炮已经使用过攻击
             if 'has_used_cannon' not in state:
                 state['has_used_cannon'] = {}
-            state['has_used_cannon'][str(current_user.id)] = True
+            state['has_used_cannon'][str(get_current_user_id())] = True
         else:
             combat_log['winner'] = 'draw'
             combat_log['msg'] = f"炮攻击失败 ({atk_power} <= 30)"
@@ -827,7 +892,7 @@ def resolve_combat(room, state):
         # 无论攻击成功还是失败，都标记炮已经使用过攻击
         if 'has_used_cannon' not in state:
             state['has_used_cannon'] = {}
-        state['has_used_cannon'][str(current_user.id)] = True
+        state['has_used_cannon'][str(get_current_user_id())] = True
     else:
         # 特殊规则：矢的远程狙击 (距离3)
         remote_attack_handled = False
@@ -883,7 +948,7 @@ def resolve_combat(room, state):
                         # 标记炮已经使用过攻击
                         if 'has_used_cannon' not in state:
                             state['has_used_cannon'] = {}
-                        state['has_used_cannon'][str(current_user.id)] = True
+                        state['has_used_cannon'][str(get_current_user_id())] = True
             
             else:
                 combat_log['winner'] = 'draw'
@@ -1417,7 +1482,7 @@ def handle_end_turn(data):
     room = GameRoom.query.get(room_id)
     state = room.get_state()
     
-    if state['turn'] == current_user.id:
+    if state['turn'] == get_current_user_id():
         next_player = room.player2_id if state['turn'] == room.player1_id else room.player1_id
         state['turn'] = next_player
         state['has_rolled'] = False
@@ -1710,7 +1775,7 @@ def handle_select_card(data):
     
     room = GameRoom.query.get(room_id)
     state = room.get_state()
-    user_key = str(current_user.id)
+    user_key = str(get_current_user_id())
     
     # --- 【新增】核心校验逻辑 ---
     
@@ -1725,7 +1790,7 @@ def handle_select_card(data):
             return emit('error', {'msg': '卡牌仅能在战斗决斗阶段使用'})
 
     # 2. 确认当前用户在战斗中的身份 (进攻方 or 防守方)
-    user_side = 'R' if room.player1_id == current_user.id else 'B'
+    user_side = 'R' if room.player1_id == get_current_user_id() else 'B'
     
     # 对于招募牌，不需要在战斗中
     if not (card_type.startswith('card_recruit_') or card_type == 'card_bad_luck'):
@@ -1795,7 +1860,7 @@ def handle_adjust_terrain(data):
     state = room.get_state()
     
     # 检查是否是当前用户的回合
-    if state['turn'] != current_user.id:
+    if state['turn'] != get_current_user_id():
         return emit('error', {'msg': '不是你的回合'})
     
     # 检查是否有足够的步数

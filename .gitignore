@@ -1,0 +1,22 @@
+__pycache__/
+*.pyc
+*.pyo
+.Python
+*.so
+.pytest_cache/
+.git/
+.vscode/
+.idea/
+.trae/
+# Keep these
+!.gitignore
+!.dockerignore
+!Dockerfile
+logs/
+*.log
+*.md
+README*
+*.sh
+*.bak
+*.tmp
+.DS_Store

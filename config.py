@@ -6,13 +6,6 @@ class Config:
     SQLALCHEMY_DATABASE_URI = 'sqlite:///game_data.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # SSO 配置
-    SSO_LOGIN_URL = "https://muvocal.com/auth/login"
-    SSO_VERIFY_URL = "https://muvocal.com/auth/verify_token"
-    SSO_CLIENT_ID = "bo_app"
-    SSO_CLIENT_SECRET = "bo_secret"
-    SSO_REDIRECT_URI = "https://muvocal.com/game/bo/sso_callback"
-
     # game.py 顶部添加配置
     CARD_CONFIG = {
         'card_1': {'name': '二位定一', 'limit': 7, 'desc': '第2位必为1'}, # 普通

@@ -21,13 +21,15 @@
 <script src="/static/js/ai_room/ai_game_sound.js"></script>
 <script src="/static/js/ai_room/ai_game_combat.js"></script>
 <script src="/static/js/ai_room/ai_game_utils.js"></script>
+<script src="/static/js/ai_room/ai_game_action.js"></script>
 <script src="/static/js/ai_room/ai_game_board.js"></script>
 <script src="/static/js/ai_room/ai_game_main.js"></script>
+<script src="/static/js/ai_room/ai_game_cheat.js"></script>
+
 <script>
     const myUserId = {{ player_id }};
     const p1Id = {{ room.player1_id }};
-    const p1Name = "{{ p1_name }}";
-    const p2Name = "{{ p2_name }}";
+    const roomId = {{ room.id }};
     const mapName = "{{ map_name or 'default_map' }}";
     
     const RED_PICTURE = "/static/js/red_dice.png";
@@ -234,55 +236,26 @@
     }
 
     function selectAction(action) {
-        const modal = document.getElementById('piece-action-modal');
-        modal.style.display = 'none';
-        isShowingActionModal = false;
-        
-        selectedActionMode = action;
-        
-        if (action === 'terrain') {
-            addLog('🏗️ 已选择修改地形模式，点击棋盘上的空格来修改地形高度');
-            renderBoard(gameState.board);
-            return;
-        }
-        
-        const piece = gameState.board[selectedPiece.r][selectedPiece.c];
-        const pos = [selectedPiece.c, selectedPiece.r];
-        const stepsLeft = gameState.steps_left || 0;
-        const moveRange = getMoveRange(piece, pos, stepsLeft, gameState);
-        
-        if (action === 'move') {
-            moveRange.captures = [];
-            moveRange.details.forEach((info, key) => {
-                if (info.isCapture || info.isRangedAttack) {
-                    moveRange.details.delete(key);
-                }
-            });
-        } else if (action === 'attack') {
-            moveRange.moves = [];
-            moveRange.details.forEach((info, key) => {
-                if (!info.isCapture && !info.isRangedAttack) {
-                    moveRange.details.delete(key);
-                }
-            });
-        }
-        
-        moveDetailsMap = moveRange.details;
+        const actionMachine = PlayerActionStateMachine.getInstance();
+        actionMachine.selectAction(action);
         renderBoard(gameState.board);
-        addLog(`📍 已选择${action === 'move' ? '移动' : '攻击'}模式`);
+    }
+    
+    function selectRangedAttack() {
+        const actionMachine = PlayerActionStateMachine.getInstance();
+        actionMachine.selectRangedAttack();
+        renderBoard(gameState.board);
+    }
+    
+    function selectMeleeAttack() {
+        const actionMachine = PlayerActionStateMachine.getInstance();
+        actionMachine.selectMeleeAttack();
+        renderBoard(gameState.board);
     }
 
     function cancelAction() {
-        const modal = document.getElementById('piece-action-modal');
-        modal.style.display = 'none';
-        isShowingActionModal = false;
-        
-        selectedPiece = null;
-        selectedActionMode = null;
-        terrainChangeTarget = null;
-        moveDetailsMap = new Map();
-        renderBoard(gameState.board);
-        addLog('❌ 已取消选择');
+        const actionMachine = PlayerActionStateMachine.getInstance();
+        actionMachine.cancelSelection();
     }
 
     function closeTerrainChangeModal() {
@@ -295,7 +268,8 @@
     }
 
     function applyTerrainChange(heightChange) {
-        if (!terrainChangeTarget || !selectedPiece) {
+        const actionMachine = PlayerActionStateMachine.getInstance();
+        if (!terrainChangeTarget || !actionMachine.getCurrentPiece()) {
             closeTerrainChangeModal();
             return;
         }
@@ -323,8 +297,7 @@
         
         closeTerrainChangeModal();
         terrainChangeTarget = null;
-        selectedPiece = null;
-        selectedActionMode = null;
+        actionMachine.cancelSelection();
         
         renderBoard(gameState.board);
         updateInfo();
@@ -379,14 +352,17 @@
     document.addEventListener('click', function(e) {
         const boardContainer = document.getElementById('game-board');
         const modal = document.getElementById('piece-action-modal');
+        const attackModal = document.getElementById('attack-type-modal');
+        const actionMachine = PlayerActionStateMachine.getInstance();
         
-        if (selectedPiece && !isShowingActionModal && boardContainer && modal) {
+        if (actionMachine.getCurrentPiece() && !actionMachine._isShowingActionModal && boardContainer && modal) {
             const isClickOnBoard = boardContainer.contains(e.target);
             const isClickOnModal = modal.contains(e.target);
+            const isClickOnAttackModal = attackModal && attackModal.contains(e.target);
             const isClickOnSidebar = e.target.closest('.rules-sidebar') || e.target.closest('.info-sidebar');
             
-            if (!isClickOnBoard && !isClickOnModal && !isClickOnSidebar) {
-                cancelAction();
+            if (!isClickOnBoard && !isClickOnModal && !isClickOnAttackModal && !isClickOnSidebar) {
+                actionMachine.cancelSelection();
             }
         }
     });

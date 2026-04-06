@@ -2,541 +2,735 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <title>博弈象棋 · 决斗版</title>
+    <title>博棋 · AI 对战</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <style>
-        /* ... (保留之前的样式) ... */
-        body { font-family: 'KaiTi', serif; background-color: #f0e6d2; text-align: center; }
-        .container { display: flex; justify-content: center; gap: 20px; margin-top: 20px; }
-        
-        #game-board {
-            display: grid;
-            grid-template-columns: repeat(9, 60px);
-            grid-template-rows: repeat(9, 60px);
-            background-color: #deb887;
-            border: 5px solid #8b4513;
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        .cell {
-            width: 60px; height: 60px;
-            border: 1px solid #a0522d;
-            display: flex; justify-content: center; align-items: center;
-            font-size: 24px; cursor: pointer;
-            user-select: none;
+        body {
+            font-family: 'STKaiti', 'KaiTi', 'SimSun', serif, serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f5f0e6 0%, #e8e0d0 50%, #d4c8b8 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            overflow-x: hidden;
         }
-        .river { background-color: #87ceeb; opacity: 0.3; }
 
-        .piece {
-            width: 50px; height: 50px;
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(ellipse at 20% 30%, rgba(180, 160, 140, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 70%, rgba(160, 140, 120, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .ink-decoration {
+            position: fixed;
+            opacity: 0.03;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .ink-decoration.top-left {
+            top: -50px;
+            left: -50px;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, #2c2c2c 0%, transparent 70%);
             border-radius: 50%;
-            display: flex; justify-content: center; align-items: center;
-            font-weight: bold;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
-            color: white;
+        }
+
+        .ink-decoration.bottom-right {
+            bottom: -100px;
+            right: -100px;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, #3a3a3a 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 900px;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .title {
+            font-family: 'STSong', 'SimSun', cursive, cursive;
+            font-size: 72px;
+            color: #2c2c2c;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.1);
+            letter-spacing: 12px;
+            margin-bottom: 15px;
             position: relative;
         }
-        .side-R { background-color: #e74c3c; border: 2px solid #c0392b; }
-        .side-B { background-color: #34495e; border: 2px solid #2c3e50; }
-        .selected { box-shadow: 0 0 10px 5px yellow; }
 
-        /* 战斗弹窗样式 */
-        #combat-modal {
-            position: fixed; top: 30%; left: 50%; transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.9); color: white;
-            padding: 20px; border-radius: 10px; border: 2px solid gold;
-            display: none; z-index: 1000; text-align: center;
+        .title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #8b4513, transparent);
         }
-        .sticks-display { font-family: monospace; font-size: 20px; letter-spacing: 5px; color: yellow; }
-        
-        #info-panel { width: 250px; text-align: left; padding: 15px; background: white; border: 1px solid #ccc; }
-        button { padding: 10px 20px; font-size: 16px; cursor: pointer; margin-top: 10px; }
-        button:disabled { background: #ccc; cursor: not-allowed; }
+
+        .subtitle {
+            font-size: 24px;
+            color: #666;
+            letter-spacing: 8px;
+            margin-top: 20px;
+        }
+
+        .main-content {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 8px;
+            padding: 50px 60px;
+            box-shadow: 
+                0 20px 60px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(139, 69, 19, 0.2);
+            width: 100%;
+            text-align: center;
+            position: relative;
+        }
+
+        .main-content::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            bottom: 10px;
+            border: 1px solid rgba(139, 69, 19, 0.1);
+            border-radius: 4px;
+            pointer-events: none;
+        }
+
+        .section-title {
+            font-family: 'STSong', 'SimSun', cursive, cursive;
+            font-size: 32px;
+            color: #3a3a3a;
+            margin-bottom: 30px;
+            letter-spacing: 6px;
+        }
+
+        .map-selector {
+            margin: 40px 0;
+        }
+
+        .map-label {
+            font-size: 20px;
+            color: #555;
+            margin-bottom: 15px;
+            letter-spacing: 4px;
+        }
+
+        .map-select {
+            appearance: none;
+            background: linear-gradient(180deg, #fafafa 0%, #f0f0f0 100%);
+            border: 2px solid #8b4513;
+            border-radius: 4px;
+            padding: 15px 50px 15px 25px;
+            font-family: 'STKaiti', 'KaiTi', 'SimSun', serif, serif;
+            font-size: 20px;
+            color: #333;
+            cursor: pointer;
+            min-width: 300px;
+            transition: all 0.3s ease;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%238b4513' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            background-size: 20px;
+        }
+
+        .map-select:hover {
+            border-color: #a0522d;
+            box-shadow: 0 4px 12px rgba(139, 69, 19, 0.2);
+        }
+
+        .map-select:focus {
+            outline: none;
+            border-color: #a0522d;
+            box-shadow: 0 0 0 3px rgba(139, 69, 19, 0.2);
+        }
+
+        .start-btn {
+            font-family: 'STSong', 'SimSun', cursive, cursive;
+            font-size: 36px;
+            letter-spacing: 8px;
+            color: #fff;
+            background: linear-gradient(180deg, #8b4513 0%, #654321 100%);
+            border: none;
+            border-radius: 6px;
+            padding: 20px 80px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 
+                0 6px 20px rgba(139, 69, 19, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            margin-top: 20px;
+        }
+
+        .start-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .start-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 
+                0 10px 30px rgba(139, 69, 19, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+
+        .start-btn:hover::before {
+            left: 100%;
+        }
+
+        .start-btn:active {
+            transform: translateY(0);
+            box-shadow: 
+                0 4px 15px rgba(139, 69, 19, 0.4),
+                inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .start-btn.loading {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        .start-btn.loading::after {
+            content: '· · ·';
+            animation: dots 1.5s infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '· · ·'; }
+            40% { content: '· · ·'; }
+            60% { content: '· ·'; }
+            80%, 100% { content: '·'; }
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 30px;
+            font-size: 16px;
+            color: #888;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ccc;
+            transition: all 0.3s ease;
+        }
+
+        .status-dot.connected {
+            background: #27ae60;
+            box-shadow: 0 0 8px rgba(39, 174, 96, 0.5);
+        }
+
+        .status-dot.error {
+            background: #e74c3c;
+            box-shadow: 0 0 8px rgba(231, 76, 60, 0.5);
+        }
+
+        .guide-btn {
+            font-family: 'STKaiti', 'KaiTi', 'SimSun', serif, serif;
+            font-size: 18px;
+            color: #8b4513;
+            background: transparent;
+            border: 1px solid #8b4513;
+            border-radius: 4px;
+            padding: 12px 30px;
+            cursor: pointer;
+            margin-top: 40px;
+            transition: all 0.3s ease;
+            letter-spacing: 4px;
+        }
+
+        .guide-btn:hover {
+            background: rgba(139, 69, 19, 0.1);
+        }
+
+        .footer {
+            margin-top: 60px;
+            text-align: center;
+            color: #999;
+            font-size: 14px;
+            letter-spacing: 2px;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(3px);
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: #faf8f5;
+            border-radius: 8px;
+            padding: 40px;
+            max-width: 800px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            border: 2px solid #8b4513;
+            position: relative;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(139, 69, 19, 0.3);
+        }
+
+        .modal-title {
+            font-family: 'STSong', 'SimSun', cursive, cursive;
+            font-size: 36px;
+            color: #3a3a3a;
+            letter-spacing: 6px;
+        }
+
+        .modal-close {
+            font-size: 28px;
+            color: #8b4513;
+            background: none;
+            border: none;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .modal-close:hover {
+            background: rgba(139, 69, 19, 0.1);
+        }
+
+        .guide-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .guide-tab {
+            font-family: 'STKaiti', 'KaiTi', 'SimSun', serif, serif;
+            padding: 10px 20px;
+            border: 1px solid #8b4513;
+            background: transparent;
+            color: #8b4513;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 2px;
+        }
+
+        .guide-tab:hover {
+            background: rgba(139, 69, 19, 0.1);
+        }
+
+        .guide-tab.active {
+            background: #8b4513;
+            color: #fff;
+        }
+
+        .guide-content {
+            display: none;
+            line-height: 1.8;
+            font-size: 16px;
+            color: #444;
+        }
+
+        .guide-content.active {
+            display: block;
+        }
+
+        .guide-content h4 {
+            font-family: 'STSong', 'SimSun', cursive, cursive;
+            font-size: 24px;
+            color: #3a3a3a;
+            margin: 20px 0 10px 0;
+            letter-spacing: 4px;
+        }
+
+        .guide-content p {
+            margin-bottom: 15px;
+        }
+
+        .guide-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+
+        .guide-content th,
+        .guide-content td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+
+        .guide-content th {
+            background: rgba(139, 69, 19, 0.1);
+            font-family: 'STSong', 'SimSun', cursive, cursive;
+            letter-spacing: 2px;
+        }
+
+        .piece-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+
+        .piece-icon.red {
+            background: linear-gradient(180deg, #e74c3c, #c0392b);
+            color: #fff;
+        }
+
+        .piece-icon.black {
+            background: linear-gradient(180deg, #34495e, #2c3e50);
+            color: #fff;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(250, 248, 245, 0.95);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 2000;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .loading-text {
+            font-family: 'STSong', 'SimSun', cursive, cursive;
+            font-size: 36px;
+            color: #3a3a3a;
+            letter-spacing: 8px;
+            margin-bottom: 20px;
+        }
+
+        .loading-dots {
+            font-size: 48px;
+            color: #8b4513;
+            animation: loadingDots 1.5s infinite;
+        }
+
+        @keyframes loadingDots {
+            0%, 20% { content: '· · ·'; opacity: 1; }
+            40% { content: '· · ·'; opacity: 0.8; }
+            60% { content: '· · ·'; opacity: 0.6; }
+            80%, 100% { content: '· · ·'; opacity: 0.4; }
+        }
+
+        .loading-dots::after {
+            content: '· · ·';
+            animation: loadingContent 1.5s infinite steps(4);
+        }
+
+        @keyframes loadingContent {
+            0% { content: '· · ·'; }
+            25% { content: '·  · '; }
+            50% { content: '· ·  '; }
+            75% { content: '· · ·'; }
+            100% { content: ' · ·'; }
+        }
     </style>
 </head>
 <body>
+    <div class="ink-decoration top-left"></div>
+    <div class="ink-decoration bottom-right"></div>
 
-    <div id="combat-modal">
-        <h2 style="color: red;">⚔️ 决斗时刻 ⚔️</h2>
-        <div id="combat-details"></div>
-        <h3 id="combat-result"></h3>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-text">布阵中</div>
+        <div class="loading-dots"></div>
     </div>
 
-    <!-- 游戏说明弹窗 -->
-    <div id="game-guide-modal" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; color: #333; padding: 30px; border-radius: 10px; border: 3px solid #3498db; display: none; z-index: 2000; width: 80%; max-width: 900px; max-height: 80vh; overflow-y: auto;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h2 style="color: #3498db; margin: 0;">🎮 博弈象棋 · 游戏说明</h2>
-            <button onclick="closeGameGuide()" style="padding: 8px 16px; background: #e74c3c; color: white; border: none; border-radius: 5px; cursor: pointer;">关闭</button>
-        </div>
-        
-        <!-- 导航标签 -->
-        <div style="display: flex; border-bottom: 2px solid #3498db; margin-bottom: 20px;">
-            <button onclick="showGuideTab('basic')" class="guide-tab" style="padding: 10px 20px; margin-right: 5px; border: none; background: #3498db; color: white; border-radius: 5px 5px 0 0; cursor: pointer;">游戏基本信息</button>
-            <button onclick="showGuideTab('pieces')" class="guide-tab" style="padding: 10px 20px; margin-right: 5px; border: none; background: #95a5a6; color: white; border-radius: 5px 5px 0 0; cursor: pointer;">棋子信息</button>
-            <button onclick="showGuideTab('terrain')" class="guide-tab" style="padding: 10px 20px; margin-right: 5px; border: none; background: #95a5a6; color: white; border-radius: 5px 5px 0 0; cursor: pointer;">地形与高度</button>
-            <button onclick="showGuideTab('combat')" class="guide-tab" style="padding: 10px 20px; border: none; background: #95a5a6; color: white; border-radius: 5px 5px 0 0; cursor: pointer;">战斗系统</button>
-        </div>
-        
-        <!-- 内容区域 -->
-        <div id="guide-content">
-            <!-- 基本信息 -->
-            <div id="basic-tab" class="guide-content-tab">
-                <h3 style="color: #3498db;">游戏基本信息</h3>
-                <p>博弈象棋是一款基于传统象棋规则的创新对战游戏，融合了策略、运气和战术元素。</p>
+    <div class="container">
+        <header class="header">
+            <h1 class="title">博棋</h1>
+            <p class="subtitle">AI 对战</p>
+        </header>
+
+        <main class="main-content">
+            <h2 class="section-title">选择战场</h2>
+            
+            <div class="map-selector">
+                <p class="map-label">战 场 地 图</p>
+                <select class="map-select" id="mapSelect">
+                    <option value="">加载中...</option>
+                </select>
+            </div>
+
+            <button class="start-btn" id="startBtn" onclick="startAIGame()">
+                开始对战
+            </button>
+
+            <div class="connection-status">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="statusText">正在连接...</span>
+            </div>
+
+            <button class="guide-btn" onclick="openGuide()">
+                游戏说明
+            </button>
+
+            <a href="/game/bo/map-editor" class="guide-btn" style="display:inline-block; text-decoration:none; margin-top:15px;">
+                地图编辑器
+            </a>
+        </main>
+
+        <footer class="footer">
+            <p>红方为玩家 · 黑方为 AI</p>
+        </footer>
+    </div>
+
+    <div class="modal-overlay" id="guideModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">游戏说明</h3>
+                <button class="modal-close" onclick="closeGuide()">×</button>
+            </div>
+            
+            <div class="guide-tabs">
+                <button class="guide-tab active" onclick="showTab('basic')">基本规则</button>
+                <button class="guide-tab" onclick="showTab('pieces')">棋子介绍</button>
+                <button class="guide-tab" onclick="showTab('terrain')">地形地势</button>
+                <button class="guide-tab" onclick="showTab('combat')">战斗规则</button>
+            </div>
+
+            <div class="guide-content active" id="basic">
                 <h4>游戏目标</h4>
-                <p>通过战斗和策略，击败对方的核心棋子（枭）。</p>
+                <p>击败对方的枭（帅），即可获胜。</p>
+                
                 <h4>游戏流程</h4>
-                <ol>
-                    <li>玩家创建或加入房间</li>
-                    <li>游戏开始，红方先手</li>
-                    <li>每回合玩家先掷采（掷骰子）决定步数</li>
-                    <li>玩家使用步数移动棋子或攻击对方棋子</li>
-                    <li>当一方的枭被击败时，游戏结束</li>
-                </ol>
+                <p>1. 选择地图，点击"开始对战"</p>
+                <p>2. 红方先手，先掷采决定步数</p>
+                <p>3. 使用步数移动棋子或攻击敌方</p>
+                <p>4. 消灭敌方枭，游戏结束</p>
+                
                 <h4>回合规则</h4>
-                <ul>
-                    <li>每回合玩家有一次掷采机会</li>
-                    <li>掷采结果决定本回合可用步数</li>
-                    <li>移动或攻击会消耗步数</li>
-                    <li>步数用完或玩家主动结束回合，回合结束</li>
-                </ul>
+                <p>每回合有一次掷采机会，掷采结果决定本回合可用步数。移动或攻击会消耗步数，步数用完自动结束回合。</p>
             </div>
-            
-            <!-- 棋子信息 -->
-            <div id="pieces-tab" class="guide-content-tab" style="display: none;">
-                <h3 style="color: #3498db;">棋子信息</h3>
-                <h4>棋子类型</h4>
-                <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-                    <tr style="background: #f2f2f2;">
-                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">棋子类型</th>
-                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">标识</th>
-                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">移动范围</th>
-                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">攻击范围</th>
-                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">攻击倍率</th>
-                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">防御倍率</th>
-                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">特殊能力</th>
-                    </tr>
-                    <tr>
-                        <td style="border: 1px solid #ddd; padding: 8px;">枭</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">X</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">1</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">1</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">1.3</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">1.3</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">核心棋子，被击败则游戏结束</td>
-                    </tr>
-                    <tr>
-                        <td style="border: 1px solid #ddd; padding: 8px;">散</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">S</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">1</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">1</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">1.0</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">1.0</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">基础棋子</td>
-                    </tr>
-                    <tr>
-                        <td style="border: 1px solid #ddd; padding: 8px;">炮</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">P</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">1</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">1-3</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">1.5</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">0.7</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">远程攻击，可攻击远处目标</td>
-                    </tr>
-                    <tr>
-                        <td style="border: 1px solid #ddd; padding: 8px;">矢</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">T</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">1</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">1-3</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">1.2</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">0.8</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">远程攻击，距离3时有特殊效果</td>
-                    </tr>
-                    <tr>
-                        <td style="border: 1px solid #ddd; padding: 8px;">工</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">G</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">1</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">1</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">0.8</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">0.8</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">可修改地形高度</td>
-                    </tr>
-                </table>
-                <h4>棋子属性</h4>
-                <ul>
-                    <li><strong>move_range</strong>：移动范围，决定棋子每回合最多可以移动的格子数</li>
-                    <li><strong>move_cost</strong>：移动成本，每移动一格消耗的步数</li>
-                    <li><strong>combat_range</strong>：攻击范围，决定棋子可以攻击的最大距离</li>
-                    <li><strong>base_power</strong>：攻击倍率，作为攻击方时的基础攻击力</li>
-                    <li><strong>defense_power</strong>：防御倍率，作为防守方时的基础防御力</li>
-                    <li><strong>attack_coop</strong>：攻击连携倍率，当己方棋子为进攻方触发连携攻击时的倍率</li>
-                    <li><strong>defense_coop</strong>：防守连携倍率，当己方棋子为防守方触发连携攻击时的倍率</li>
-                    <li><strong>coop_range</strong>：连携范围，决定连携攻击的有效范围</li>
-                    <li><strong>terrain_change</strong>：地形修改能力，1表示可以修改地形高度</li>
-                </ul>
+
+            <div class="guide-content" id="pieces">
+                <h4>枭 X</h4>
+                <p>核心棋子，被击败则游戏结束。攻守兼备，战斗力强。</p>
+                
+                <h4>散 S</h4>
+                <p>基础棋子，各项属性均衡。</p>
+                
+                <h4>炮 P</h4>
+                <p>远程攻击单位，可攻击1-3格内的目标。攻击力高但防御较弱。</p>
+                
+                <h4>矢 T</h4>
+                <p>远程攻击单位，攻击距离3格时有特殊效果。</p>
+                
+                <h4>工 G</h4>
+                <p>特殊单位，可以修改地形高度。</p>
             </div>
-            
-            <!-- 地形与高度 -->
-            <div id="terrain-tab" class="guide-content-tab" style="display: none;">
-                <h3 style="color: #3498db;">地形与高度</h3>
-                <h4>地形类型</h4>
-                <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-                    <tr style="background: #f2f2f2;">
-                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">地形类型</th>
-                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">移动成本</th>
-                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">战斗加成</th>
-                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">描述</th>
-                    </tr>
-                    <tr>
-                        <td style="border: 1px solid #ddd; padding: 8px;">平原</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">1.0</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">1.0</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">基础地形，无特殊效果</td>
-                    </tr>
-                    <tr>
-                        <td style="border: 1px solid #ddd; padding: 8px;">河流</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">2.0</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">0.8</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">移动成本增加，战斗效果减弱</td>
-                    </tr>
-                    <tr>
-                        <td style="border: 1px solid #ddd; padding: 8px;">山地</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">1.5</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">1.2</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">移动成本增加，战斗效果增强</td>
-                    </tr>
-                </table>
+
+            <div class="guide-content" id="terrain">
+                <h4>平原</h4>
+                <p>基础地形，无特殊效果。移动成本1.0，战斗加成1.0。</p>
+                
+                <h4>河流</h4>
+                <p>移动成本增加，战斗效果减弱。移动成本2.0，战斗加成0.8。</p>
+                
+                <h4>山地</h4>
+                <p>移动成本增加，战斗效果增强。移动成本1.5，战斗加成1.2。</p>
+                
                 <h4>高度系统</h4>
-                <p>棋盘上每个格子都有高度值，高度会影响：</p>
-                <ul>
-                    <li><strong>移动</strong>：相邻格子高度差超过1时，无法移动</li>
-                    <li><strong>攻击</strong>：高处攻击低处时，攻击力会有加成</li>
-                    <li><strong>远程攻击</strong>：高度差会影响远程攻击的最大范围</li>
-                </ul>
-                <p>高度值范围：-1（低洼）到 3（高山）</p>
-                <h4>地形修改</h4>
-                <p>工棋子可以修改地形高度，每次修改可以：</p>
-                <ul>
-                    <li>增加1点高度</li>
-                    <li>减少1点高度</li>
-                </ul>
+                <p>棋盘每个格子有高度值（-1到3）。高度差超过1时无法移动，高处攻击低处有加成。</p>
             </div>
-            
-            <!-- 战斗系统 -->
-            <div id="combat-tab" class="guide-content-tab" style="display: none;">
-                <h3 style="color: #3498db;">战斗系统</h3>
+
+            <div class="guide-content" id="combat">
                 <h4>战斗触发</h4>
-                <p>当一方棋子移动到另一方棋子所在的格子时，会触发战斗。</p>
+                <p>当棋子移动到敌方棋子所在格子时，触发战斗。</p>
+                
                 <h4>战斗流程</h4>
-                <ol>
-                    <li>双方掷采（生成6位二进制数）</li>
-                    <li>计算双方战力</li>
-                    <li>比较战力，战力高的一方获胜</li>
-                    <li>获胜方留在格子，失败方被移除</li>
-                </ol>
+                <p>1. 双方掷采（6位二进制数）</p>
+                <p>2. 计算战力 = 掷采值 × 各种倍率</p>
+                <p>3. 战力高者获胜</p>
+                
                 <h4>战力计算</h4>
-                <p>战力 = 掷采值 × 倍率</p>
-                <h5>攻击方倍率计算</h5>
-                <ul>
-                    <li>基础倍率：棋子的base_power</li>
-                    <li>连携倍率：根据周围己方棋子的数量和类型计算</li>
-                    <li>距离倍率：远程攻击时，根据距离和高度差计算</li>
-                    <li>地形加成：根据所在地形的战斗加成计算</li>
-                </ul>
-                <h5>防守方倍率计算</h5>
-                <ul>
-                    <li>基础倍率：棋子的defense_power</li>
-                    <li>连携倍率：根据周围己方棋子的数量和类型计算</li>
-                    <li>地形加成：根据所在地形的战斗加成计算</li>
-                </ul>
+                <p>战力受棋子基础属性、连携加成、地形加成、高度差等因素影响。</p>
+                
                 <h4>连携攻击</h4>
-                <p>连携攻击公式：Total = (Σx_i) × [1 + k × (N + T - 2)]</p>
-                <ul>
-                    <li>Σx_i：所有连携棋子的攻击/防御连携倍率之和</li>
-                    <li>k：连携系数，从0.1开始，每10回合增加0.1</li>
-                    <li>N：连携棋子数量</li>
-                    <li>T：连携棋子类型数量</li>
-                </ul>
-                <h4>特殊规则</h4>
-                <ul>
-                    <li><strong>远程攻击</strong>：远程单位攻击近程单位且非临近时，需要满足特殊条件</li>
-                    <li><strong>炮的攻击</strong>：炮可以攻击远处目标，但一回合只能使用一次攻击</li>
-                    <li><strong>矢的远程狙击</strong>：矢在距离3时攻击有特殊效果</li>
-                </ul>
+                <p>周围有己方棋子时，可触发连携攻击，伤害更高。</p>
             </div>
         </div>
     </div>
-    
-    <!-- 遮罩层 -->
-    <div id="guide-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; z-index: 1999;"></div>
-
-    <h1>博弈象棋 · 决斗版</h1>
-    <button onclick="openGameGuide()" style="margin: 10px; padding: 10px 20px; font-size: 16px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer;">游戏说明</button>
-
-    {% if not current_user.is_authenticated %}
-        <div style="margin-top:100px;">
-            <a href="/game/bo/login"><button>登录游戏</button></a>
-        </div>
-    {% else %}
-        <div id="lobby">
-            <p>玩家: {{ current_user.username }}</p>
-            <button onclick="createGame()">创建房间</button>
-            <input type="text" id="room-input" placeholder="输入房间ID">
-            <button onclick="joinGame()">加入房间</button>
-        </div>
-
-        <div id="game-area" style="display:none;">
-            <div class="container">
-                <div id="game-board"></div>
-                
-                <div id="info-panel">
-                    <h3>房间 ID: <span id="disp-room-id"></span></h3>
-                    <p>状态: <span id="status-msg">等待中...</span></p>
-                    <hr>
-                    <p>当前回合: <strong id="disp-turn" style="font-size: 18px;"></strong></p>
-                    
-                    <div style="background: #eee; padding: 10px; margin: 10px 0; border-radius: 5px;">
-                        <p>本回剩余步数: <span id="disp-steps" style="font-size:30px; color:red; font-weight:bold;">0</span></p>
-                        <button id="btn-roll" onclick="rollForTurn()" style="width:100%; background:gold; color:black;">🎲 掷采 (决定步数)</button>
-                    </div>
-
-                    <button onclick="endTurnManual()">结束回合</button>
-                    
-                    <div id="log-area" style="margin-top:20px; font-size:12px; height:150px; overflow-y:auto; border-top:1px solid #ccc;">
-                        <p style="color:gray;">-- 游戏日志 --</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    {% endif %}
 
     <script>
-        // 游戏说明弹窗相关函数
-        function openGameGuide() {
-            document.getElementById('game-guide-modal').style.display = 'block';
-            document.getElementById('guide-overlay').style.display = 'block';
-        }
-        
-        function closeGameGuide() {
-            document.getElementById('game-guide-modal').style.display = 'none';
-            document.getElementById('guide-overlay').style.display = 'none';
-        }
-        
-        function showGuideTab(tabId) {
-            // 隐藏所有内容
-            const tabContents = document.querySelectorAll('.guide-content-tab');
-            tabContents.forEach(content => {
-                content.style.display = 'none';
-            });
-            
-            // 移除所有标签的活跃状态
-            const guideTabs = document.querySelectorAll('.guide-tab');
-            guideTabs.forEach(tab => {
-                tab.style.background = '#95a5a6';
-            });
-            
-            // 显示选中的内容和标签
-            document.getElementById(tabId + '-tab').style.display = 'block';
-            event.currentTarget.style.background = '#3498db';
-        }
-        
-        // 点击遮罩层关闭弹窗
-        document.getElementById('guide-overlay').onclick = closeGameGuide;
-        
-        const socket = io();
-        let currentRoomId = null;
-        let mySide = null; 
-        let currentTurnPlayerId = null;
-        let myUserId = {{ current_user.id if current_user.is_authenticated else 'null' }};
-        let selectedPiece = null;
-        let globalBoardState = []; // 缓存棋盘数据
+        const socket = io({
+            path: '/game/bo/socket.io',
+            transports: ['websocket', 'polling'],
+            upgrade: true,
+            rememberTransport: false
+        });
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        const startBtn = document.getElementById('startBtn');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const mapSelect = document.getElementById('mapSelect');
 
-        // --- Socket 监听 ---
+        socket.on('connect', () => {
+            console.log('Socket.IO 已连接');
+            statusDot.className = 'status-dot connected';
+            statusText.textContent = '已连接';
+        });
+
+        socket.on('disconnect', () => {
+            console.log('Socket.IO 断开');
+            statusDot.className = 'status-dot error';
+            statusText.textContent = '连接断开';
+        });
+
+        socket.on('connect_error', (err) => {
+            console.error('Socket.IO 连接失败:', err);
+            statusDot.className = 'status-dot error';
+            statusText.textContent = '连接失败';
+        });
+
+        async function initPage() {
+            try {
+                const res = await fetch('/game/bo/api/get-maps');
+                const data = await res.json();
+                mapSelect.innerHTML = '';
+                data.maps.forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m.name;
+                    opt.textContent = m.display_name;
+                    mapSelect.appendChild(opt);
+                });
+            } catch (err) {
+                console.error('获取地图列表失败:', err);
+                statusDot.className = 'status-dot error';
+                statusText.textContent = '获取地图失败';
+            }
+        }
+        
+        initPage();
 
         socket.on('game_created', (data) => {
-            mySide = 'R'; 
-            initGameUI(data.room_id, data.state, "等待对手...");
-        });
-
-        socket.on('game_started', (data) => {
-            if (myUserId === data.players.R.id) mySide = 'R';
-            else if (myUserId === data.players.B.id) mySide = 'B';
-            else mySide = 'Spectator';
-            
-            initGameUI(data.room_id, data.state, `对手: ${mySide==='R'?data.players.B.name:data.players.R.name}`);
-        });
-
-        socket.on('roll_result', (data) => {
-            addLog(`🎲 掷采: [${data.sticks.join('')}] -> ${data.steps} 步`);
-        });
-
-        socket.on('board_update', (data) => {
-            renderBoard(data.state.board);
-            updateInfo(data.state);
-            
-            // 如果有战斗数据，展示弹窗
-            if (data.combat) {
-                showCombatModal(data.combat);
-            }
-            if (data.turn_ended) {
-                addLog("--- 回合结束 ---");
-            }
+            loadingOverlay.classList.remove('active');
+            const mapName = data.map_name || data.state?.map_name || 'default_map';
+            window.location.href = `/game/bo/ai-room/${data.room_id}?map=${mapName}`;
         });
 
         socket.on('error', (data) => {
-            alert(data.msg);
+            loadingOverlay.classList.remove('active');
+            startBtn.classList.remove('loading');
+            startBtn.textContent = '开始对战';
+            alert(data.msg || '发生错误');
+            statusDot.className = 'status-dot error';
+            statusText.textContent = '游戏创建失败';
         });
 
-        // --- 逻辑函数 ---
-
-        function initGameUI(roomId, state, msg) {
-            currentRoomId = roomId;
-            document.getElementById('lobby').style.display = 'none';
-            document.getElementById('game-area').style.display = 'block';
-            document.getElementById('disp-room-id').innerText = roomId;
-            document.getElementById('status-msg').innerText = msg;
-            renderBoard(state.board);
-            updateInfo(state);
-        }
-
-        function createGame() { socket.emit('create_game'); }
-        function joinGame() { 
-            const id = document.getElementById('room-input').value;
-            if(id) socket.emit('join_game', {room_id: id});
-        }
-        function rollForTurn() {
-            socket.emit('roll_for_turn', {room_id: currentRoomId});
-        }
-        function endTurnManual() {
-            socket.emit('end_turn_manually', {room_id: currentRoomId});
-        }
-
-        function updateInfo(state) {
-            currentTurnPlayerId = state.turn;
-            document.getElementById('disp-steps').innerText = state.steps_left;
-            
-            const isMyTurn = (state.turn === myUserId);
-            document.getElementById('disp-turn').innerText = isMyTurn ? "👉 轮到你了" : "⏳ 对方回合";
-            document.getElementById('disp-turn').style.color = isMyTurn ? "green" : "gray";
-
-            // 控制掷采按钮：只有是我的回合，且还没掷过采(has_rolled=false)时可用
-            const btnRoll = document.getElementById('btn-roll');
-            if (isMyTurn && !state.has_rolled) {
-                btnRoll.disabled = false;
-                btnRoll.innerText = "🎲 掷采 (决定步数)";
-            } else {
-                btnRoll.disabled = true;
-                btnRoll.innerText = state.has_rolled ? "已掷采" : "等待回合";
-            }
-
-            if (state.winner) {
-                setTimeout(() => alert(`游戏结束! ${state.winner === 'R' ? '红方' : '黑方'} 获胜!`), 500);
-            }
-        }
-
-        function showCombatModal(combat) {
-            const modal = document.getElementById('combat-modal');
-            const details = document.getElementById('combat-details');
-            const result = document.getElementById('combat-result');
-            
-            // 格式化二进制
-            const atkBin = combat.attacker.sticks.join('');
-            const defBin = combat.defender.sticks.join('');
-            
-            details.innerHTML = `
-                <p>进攻方 (${combat.attacker.side})</p>
-                <div class="sticks-display">${atkBin}</div>
-                <p>战力: <strong>${combat.attacker.power}</strong></p>
-                <hr style="border-color: #555;">
-                <p>防守方 (${combat.defender.side})</p>
-                <div class="sticks-display">${defBin}</div>
-                <p>战力: <strong>${combat.defender.power}</strong></p>
-            `;
-            
-            if (combat.winner === 'attacker') {
-                result.innerText = "💥 进攻成功！防守方被吃！";
-                result.style.color = "#0f0";
-            } else {
-                result.innerText = "🛡️ 进攻失败！遭到反杀！";
-                result.style.color = "orange";
+        function startAIGame() {
+            if (!socket.connected) {
+                alert('连接未建立，请稍候...');
+                return;
             }
             
-            modal.style.display = 'block';
-            addLog(combat.msg);
-
-            // 3秒后自动关闭
-            setTimeout(() => { modal.style.display = 'none'; }, 3000);
+            const mapName = document.getElementById('mapSelect').value;
+            startBtn.classList.add('loading');
+            loadingOverlay.classList.add('active');
+            socket.emit('create_ai_game', { map_name: mapName });
         }
 
-        function addLog(msg) {
-            const logArea = document.getElementById('log-area');
-            const p = document.createElement('p');
-            p.innerText = msg;
-            p.style.margin = "2px 0";
-            logArea.prepend(p);
+        function openGuide() {
+            document.getElementById('guideModal').classList.add('active');
         }
 
-        function renderBoard(boardData) {
-            globalBoardState = boardData; // 更新缓存
-            const boardContainer = document.getElementById('game-board');
-            boardContainer.innerHTML = ''; 
+        function closeGuide() {
+            document.getElementById('guideModal').classList.remove('active');
+        }
 
-            if (!boardData) return;
+        function showTab(tabId) {
+            document.querySelectorAll('.guide-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.guide-tab').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('active');
+        }
 
-            for (let r = 0; r < 9; r++) {
-                for (let c = 0; c < 9; c++) {
-                    const cell = document.createElement('div');
-                    cell.className = 'cell';
-                    if (r === 4) cell.classList.add('river');
-
-                    const piece = boardData[r][c];
-                    if (piece) {
-                        const pDiv = document.createElement('div');
-                        pDiv.className = `piece side-${piece.side}`;
-                        pDiv.innerText = piece.type === 'X' ? '枭' : '散';
-                        if (selectedPiece && selectedPiece.r === r && selectedPiece.c === c) {
-                            pDiv.classList.add('selected');
-                        }
-                        cell.appendChild(pDiv);
-                    }
-                    cell.onclick = () => handleCellClick(r, c, piece);
-                    boardContainer.appendChild(cell);
-                }
+        document.getElementById('guideModal').addEventListener('click', (e) => {
+            if (e.target.id === 'guideModal') {
+                closeGuide();
             }
-        }
-
-        function handleCellClick(r, c, piece) {
-            if (currentTurnPlayerId !== myUserId) return;
-
-            // 移动逻辑
-            if (!selectedPiece) {
-                if (piece && piece.side === mySide) {
-                    selectedPiece = {r, c};
-                    renderBoard(globalBoardState);
-                }
-            } else {
-                // 取消选中
-                if (selectedPiece.r === r && selectedPiece.c === c) {
-                    selectedPiece = null;
-                    renderBoard(globalBoardState);
-                    return;
-                }
-                // 切换选中
-                if (piece && piece.side === mySide) {
-                    selectedPiece = {r, c};
-                    renderBoard(globalBoardState);
-                    return;
-                }
-                // 移动或攻击
-                socket.emit('move_piece', {
-                    room_id: currentRoomId,
-                    from_r: selectedPiece.r,
-                    from_c: selectedPiece.c,
-                    to_r: r,
-                    to_c: c
-                });
-                selectedPiece = null;
-            }
-        }
+        });
     </script>
 </body>
 </html>

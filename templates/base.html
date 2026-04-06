@@ -229,15 +229,6 @@
         <a href="/game/bo">🏰 六博对战</a>
     </div>
 
-    <div class="navbar-right">
-        {% if current_user.is_authenticated %}
-            <span class="username">👤 {{ current_user.username }}</span> 
-            <a href="{{ url_for('auth.logout') }}" class="logout-btn">退出</a>
-        {% else %}
-            <a href="{{ url_for('auth.login') }}">登录</a>
-        {% endif %}
-    </div>
-
     {% with messages = get_flashed_messages() %}
         {% if messages %}
             <div style="background:#f1c40f; padding:10px; text-align:center;">
@@ -254,10 +245,11 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script>
-        // 修改后: 使用绝对路径
         const socket = io({
-            // path: '/game/bo/socket.io'  // 绝对路径，与后端配置一致
-            path: '/socket.io'
+            path: '/game/bo/socket.io',
+            transports: ['websocket', 'polling'],
+            upgrade: true,
+            rememberTransport: false
         });
     </script>
     {% block extra_js %}{% endblock %}
