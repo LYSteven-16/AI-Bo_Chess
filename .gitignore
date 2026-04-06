@@ -12,6 +12,7 @@ __pycache__/
 !.gitignore
 !.dockerignore
 !Dockerfile
+!instance/game_data.db
 logs/
 *.log
 *.md
